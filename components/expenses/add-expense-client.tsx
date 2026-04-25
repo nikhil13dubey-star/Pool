@@ -148,7 +148,6 @@ export function AddExpenseClient({ group, currentUser, members }: Props) {
           <FieldRow
             label="Description"
             value={description || "What was this for?"}
-            hasInput
             isPlaceholder={!description}
           >
             <input
