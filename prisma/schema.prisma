@@ -2,8 +2,9 @@
 // Section 4 of POOL_PHASE1_BUILD_PLAN.md — implement exactly this.
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider   = "prisma-client-js"
+  output     = "../node_modules/.prisma/client"
+  engineType = "library"
 }
 
 datasource db {
