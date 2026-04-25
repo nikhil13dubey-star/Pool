@@ -23,7 +23,7 @@ export default async function HomePage() {
 
   // Compute per-group balances in parallel
   const groupsWithBalances = await Promise.all(
-    memberships.map(async ({ group }) => {
+    memberships.map(async ({ group }: { group: (typeof memberships)[0]["group"] }) => {
       const balances = await computeBalances(group.id);
       const myBalance = balances.find((b) => b.userId === user.id);
       return { group, netBalance: myBalance?.net ?? 0 };

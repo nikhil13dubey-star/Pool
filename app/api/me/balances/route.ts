@@ -15,7 +15,7 @@ export async function GET() {
   });
 
   const allBalances = await Promise.all(
-    memberships.map(({ groupId }) => computeBalances(groupId)),
+    memberships.map(({ groupId }: { groupId: string }) => computeBalances(groupId)),
   );
 
   const perFriend: Record<string, { owed: number; owes: number }> = {};

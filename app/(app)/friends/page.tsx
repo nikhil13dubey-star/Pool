@@ -12,7 +12,7 @@ export default async function FriendsPage() {
   });
 
   const allBalances = await Promise.all(
-    memberships.map((m) => computeBalances(m.groupId)),
+    memberships.map((m: { groupId: string }) => computeBalances(m.groupId)),
   );
 
   // Aggregate per-friend across all groups

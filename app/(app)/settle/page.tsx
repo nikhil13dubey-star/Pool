@@ -20,7 +20,7 @@ export default async function SettlePage() {
   }[] = [];
 
   await Promise.all(
-    memberships.map(async ({ groupId }) => {
+    memberships.map(async ({ groupId }: { groupId: string }) => {
       const balances = await computeBalances(groupId);
       const rawBalances: Record<string, number> = {};
       for (const b of balances) rawBalances[b.userId] = b.net;
