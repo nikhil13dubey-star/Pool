@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/server/auth-helpers";
 import { prisma } from "@/lib/server/db";
-import { computeBalances } from "@/lib/server/balances";
+import { computeBalancesFromData } from "@/lib/server/balances";
 import { FriendsClient } from "@/components/friends/friends-client";
 
 export default async function FriendsPage() {
@@ -11,16 +11,26 @@ export default async function FriendsPage() {
     select: { groupId: true },
   });
 
-  const groupIds: string[] = memberships.map((m) => m.groupId);
-  const allBalances = await Promise.all(groupIds.map(computeBalances));
+  const groupIds = memberships.map((m) => m.groupId);
 
-  // Aggregate per-friend across all groups
+  if (groupIds.length === 0) {
+    return <FriendsClient currentUser={user} friends={[]} />;
+  }
+
+  // 2 DB queries total regardless of group count
+  const [expenses, settlements] = await Promise.all([
+    prisma.expense.findMany({
+      where: { groupId: { in: groupIds }, isDeleted: false },
+      include: { shares: true },
+    }),
+    prisma.settlement.findMany({ where: { groupId: { in: groupIds } } }),
+  ]);
+
+  const allBalances = computeBalancesFromData(expenses, settlements);
+  const mine = allBalances.find((b) => b.userId === user.id);
+
   const perFriend: Record<string, { owed: number; owes: number }> = {};
-
-  for (const groupBalances of allBalances) {
-    const mine = groupBalances.find((b) => b.userId === user.id);
-    if (!mine) continue;
-
+  if (mine) {
     for (const [uid, amt] of Object.entries(mine.isOwed)) {
       if (!perFriend[uid]) perFriend[uid] = { owed: 0, owes: 0 };
       perFriend[uid].owed += amt;
@@ -45,10 +55,7 @@ export default async function FriendsPage() {
       })
     : [];
 
-  const friendsWithBalance = friends.map((f) => ({
-    ...f,
-    ...perFriend[f.id],
-  }));
+  const friendsWithBalance = friends.map((f) => ({ ...f, ...perFriend[f.id] }));
 
   return <FriendsClient currentUser={user} friends={friendsWithBalance} />;
 }

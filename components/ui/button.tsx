@@ -19,6 +19,7 @@ export function Button({
   children,
   className,
   disabled,
+  style,
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
@@ -27,6 +28,11 @@ export function Button({
     <button
       {...props}
       disabled={isDisabled}
+      style={
+        variant === "secondary"
+          ? { border: "0.5px solid rgba(255,255,255,0.1)", ...style }
+          : style
+      }
       className={cn(
         "relative flex items-center justify-center gap-2 font-semibold rounded-[16px] transition-all duration-150",
         "pool-press select-none",
@@ -44,7 +50,7 @@ export function Button({
           !isDisabled && "hover:bg-white/95",
         ],
         variant === "secondary" && [
-          "bg-white/8 text-white border border-white/10",
+          "bg-white/8 text-white",
           "backdrop-blur-[30px]",
           "shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]",
           isDisabled && "opacity-50",
@@ -98,13 +104,20 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
 }
 
-export function IconButton({ badge, children, className, ...props }: IconButtonProps) {
+export function IconButton({
+  badge,
+  children,
+  className,
+  style,
+  ...props
+}: IconButtonProps) {
   return (
     <button
       {...props}
+      style={{ border: "0.5px solid rgba(255,255,255,0.1)", ...style }}
       className={cn(
         "relative w-[38px] h-[38px] rounded-full flex items-center justify-center",
-        "bg-white/8 backdrop-blur-[30px] border border-white/10",
+        "bg-white/8 backdrop-blur-[30px]",
         "shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]",
         "pool-press text-white",
         className,

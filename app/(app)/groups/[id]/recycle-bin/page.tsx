@@ -9,21 +9,24 @@ interface Props {
 
 export default async function RecycleBinPage({ params }: Props) {
   const { id: groupId } = await params;
-  const user = await getCurrentUser();
 
+  const [user, deleted] = await Promise.all([
+    getCurrentUser(),
+    prisma.expense.findMany({
+      where: { groupId, isDeleted: true },
+      include: {
+        paidBy: { select: { id: true, displayName: true } },
+        shares: { include: { user: { select: { id: true, displayName: true } } } },
+      },
+      orderBy: { deletedAt: "desc" },
+    }),
+  ]);
+
+  // Verify membership after parallel fetch
   const member = await prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId, userId: user.id } },
   });
   if (!member?.isActive) notFound();
-
-  const deleted = await prisma.expense.findMany({
-    where: { groupId, isDeleted: true },
-    include: {
-      paidBy: { select: { id: true, displayName: true } },
-      shares: { include: { user: { select: { id: true, displayName: true } } } },
-    },
-    orderBy: { deletedAt: "desc" },
-  });
 
   return <RecycleBinClient groupId={groupId} expenses={deleted} currentUser={user} />;
 }

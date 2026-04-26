@@ -22,12 +22,14 @@ export function GlassCard({
   return (
     <Tag
       onClick={onClick}
-      style={style}
+      style={{
+        border: "0.5px solid rgba(255,255,255,0.07)",
+        ...style,
+      }}
       className={cn(
         "relative overflow-hidden rounded-[20px]",
         "bg-white/5 backdrop-blur-[30px] saturate-[180%]",
-        "border border-white/[0.07]",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_0_rgba(0,0,0,0.2)]",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_1px_0_rgba(0,0,0,0.2)]",
         !noPadding && "p-4",
         onClick && "pool-press cursor-pointer",
         className,

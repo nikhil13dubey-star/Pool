@@ -9,18 +9,20 @@ interface Props {
 
 export default async function NewExpensePage({ params }: Props) {
   const { id: groupId } = await params;
-  const user = await getCurrentUser();
 
-  const group = await prisma.group.findUnique({
-    where: { id: groupId, isDeleted: false },
-    include: {
-      members: {
-        where: { isActive: true },
-        include: { user: true },
-        orderBy: { joinedAt: "asc" },
+  const [user, group] = await Promise.all([
+    getCurrentUser(),
+    prisma.group.findUnique({
+      where: { id: groupId, isDeleted: false },
+      include: {
+        members: {
+          where: { isActive: true },
+          include: { user: true },
+          orderBy: { joinedAt: "asc" },
+        },
       },
-    },
-  });
+    }),
+  ]);
 
   if (!group) notFound();
   const isMember = group.members.some((m) => m.userId === user.id);

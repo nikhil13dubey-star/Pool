@@ -21,7 +21,7 @@ export function TabBar() {
   const pathname = usePathname();
 
   return (
-    <div className="absolute bottom-[18px] left-1/2 -translate-x-1/2 z-50">
+    <div className="fixed bottom-[18px] left-1/2 -translate-x-1/2 z-50">
       <div
         className="flex gap-1 p-1.5 rounded-[32px]"
         style={{

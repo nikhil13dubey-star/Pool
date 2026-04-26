@@ -16,7 +16,7 @@ function emailToDefaultName(email: string): string {
 
 export function ProfileSetupClient({ email }: { email: string }) {
   const router = useRouter();
-  const [displayName, setDisplayName] = useState(emailToDefaultName(email));
+  const [displayName, setDisplayName] = useState("");
   const [upiId, setUpiId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

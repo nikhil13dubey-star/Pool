@@ -289,7 +289,7 @@ function NotifCard({ notif, older }: { notif: Notification; older?: boolean }) {
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: "#0a84ff",
+            background: "#64d2ff",
             flexShrink: 0,
             marginTop: 6,
             position: "relative",
