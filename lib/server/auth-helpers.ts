@@ -10,6 +10,7 @@ export async function getCurrentUser() {
     where: { id: session.user.id },
   });
   if (!user) redirect("/sign-in");
+  if (user.displayName === "") redirect("/onboarding/profile");
 
   return user;
 }

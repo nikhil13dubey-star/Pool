@@ -21,6 +21,9 @@ export async function PATCH(req: NextRequest) {
         displayName: parsed.data.displayName,
       }),
       ...(parsed.data.upiId !== undefined && { upiId: parsed.data.upiId }),
+      ...(parsed.data.defaultCurrency !== undefined && {
+        defaultCurrency: parsed.data.defaultCurrency,
+      }),
     },
   });
 

@@ -18,7 +18,7 @@ export default function SignInPage() {
       const result = await signIn("resend", {
         email: email.trim().toLowerCase(),
         redirect: false,
-        callbackUrl: "/",
+        callbackUrl: "/onboarding/profile",
       });
       if (result?.error) {
         setError("Something went wrong. Try again.");
@@ -39,7 +39,7 @@ export default function SignInPage() {
       await signIn("resend", {
         email: email.trim().toLowerCase(),
         redirect: false,
-        callbackUrl: "/",
+        callbackUrl: "/onboarding/profile",
       });
     } finally {
       setLoading(false);

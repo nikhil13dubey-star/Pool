@@ -37,7 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const displayName = emailToDisplayName(email) || "User";
       const avatarColor = emailToColor(email);
       const user = await prisma.user.create({
-        data: { email, displayName, avatarColor },
+        data: { email, displayName: "", avatarColor },
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return { ...user, email, emailVerified: null } as any;
