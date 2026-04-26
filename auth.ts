@@ -31,14 +31,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...baseAdapter,
     // Auth.js passes name/emailVerified/image which our schema doesn't have.
     // Call prisma directly with only the fields our User model accepts.
-    createUser: async (data: { email?: string | null }) => {
-      const email = data.email ?? "";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createUser: async (data: any) => {
+      const email: string = data.email ?? "";
       const displayName = emailToDisplayName(email) || "User";
       const avatarColor = emailToColor(email);
       const user = await prisma.user.create({
         data: { email, displayName, avatarColor },
       });
-      return { ...user, emailVerified: null };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return { ...user, email, emailVerified: null } as any;
     },
   },
   providers: [
