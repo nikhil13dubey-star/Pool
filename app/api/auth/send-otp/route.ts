@@ -1,7 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.AUTH_RESEND_KEY!);
-
 export async function POST(req: Request) {
   const { email } = await req.json();
   if (!email) return Response.json({ error: "Email required" }, { status: 400 });
@@ -14,6 +12,7 @@ export async function POST(req: Request) {
     return Response.json({ success: true });
   }
 
+  const resend = new Resend(process.env.AUTH_RESEND_KEY!);
   await resend.emails.send({
     from,
     to: email,
