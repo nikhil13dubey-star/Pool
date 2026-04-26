@@ -32,7 +32,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
-      <body className="h-full antialiased">{children}</body>
+      <body className="h-full antialiased bg-[#050505]">
+        <div className="relative mx-auto h-full max-w-[430px] overflow-x-hidden">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }

@@ -222,12 +222,11 @@ export default function SignInPage() {
                 )}
                 <button
                   type="submit"
-                  disabled={!email.trim() || loading}
+                  disabled={loading}
                   style={{
                     width: "100%",
-                    background:
-                      !email.trim() || loading ? "rgba(255,255,255,0.1)" : "#fff",
-                    color: !email.trim() || loading ? "rgba(255,255,255,0.4)" : "#000",
+                    background: loading ? "rgba(255,255,255,0.1)" : "#fff",
+                    color: loading ? "rgba(255,255,255,0.4)" : "#000",
                     fontSize: 16,
                     fontWeight: 600,
                     border: "none",
@@ -238,7 +237,7 @@ export default function SignInPage() {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 8,
-                    cursor: !email.trim() || loading ? "not-allowed" : "pointer",
+                    cursor: loading ? "not-allowed" : "pointer",
                     transition: "background 0.15s, color 0.15s",
                   }}
                 >
