@@ -48,19 +48,30 @@ export default function SignInPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
       style={{
+        minHeight: "100svh",
+        display: "flex",
+        flexDirection: "column",
         background:
           "radial-gradient(ellipse 600px 800px at 50% 100%, #1a1a1a 0%, #050505 70%)",
+        position: "relative",
       }}
     >
       {/* Ambient blobs */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          overflow: "hidden",
+          pointerEvents: "none",
+        }}
+      >
         <div
-          className="absolute rounded-full"
           style={{
+            position: "absolute",
             width: 400,
             height: 400,
+            borderRadius: "50%",
             background: "rgba(120,120,130,0.18)",
             filter: "blur(80px)",
             top: -100,
@@ -68,10 +79,11 @@ export default function SignInPage() {
           }}
         />
         <div
-          className="absolute rounded-full"
           style={{
+            position: "absolute",
             width: 350,
             height: 350,
+            borderRadius: "50%",
             background: "rgba(140,140,145,0.14)",
             filter: "blur(80px)",
             top: 220,
@@ -80,12 +92,30 @@ export default function SignInPage() {
         />
       </div>
 
-      <div className="relative z-10 flex flex-col flex-1 px-7 pb-8">
+      {/* Content */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 10,
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          padding: "0 28px 32px",
+        }}
+      >
         {sent ? (
           <MagicLinkSent email={email} onResend={handleResend} loading={loading} />
         ) : (
           <>
-            <div className="flex-1 flex flex-col justify-center gap-8">
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: 32,
+              }}
+            >
               {/* Logo mark */}
               <div
                 style={{
@@ -146,6 +176,7 @@ export default function SignInPage() {
                     letterSpacing: "-0.03em",
                     lineHeight: 1.05,
                     marginBottom: 12,
+                    color: "#fff",
                   }}
                 >
                   Welcome to Pool.
@@ -155,6 +186,7 @@ export default function SignInPage() {
                     fontSize: 16,
                     color: "rgba(255,255,255,0.55)",
                     lineHeight: 1.5,
+                    margin: 0,
                   }}
                 >
                   Split with friends. Settle in seconds. No ads, no limits.
@@ -185,7 +217,6 @@ export default function SignInPage() {
                     background: email
                       ? "rgba(255,255,255,0.08)"
                       : "rgba(255,255,255,0.05)",
-                    backdropFilter: "blur(30px) saturate(180%)",
                     border: `0.5px solid ${email ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.1)"}`,
                     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
                     borderRadius: 16,
@@ -194,15 +225,16 @@ export default function SignInPage() {
                     fontSize: 15,
                     fontFamily: "inherit",
                     outline: "none",
-                    marginBottom: error ? 6 : 16,
                     display: "block",
+                    marginBottom: error ? 8 : 16,
+                    boxSizing: "border-box",
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = "rgba(255,255,255,0.25)";
                     e.target.style.background = "rgba(255,255,255,0.08)";
                   }}
                   onBlur={(e) => {
-                    if (!email) {
+                    if (!e.target.value) {
                       e.target.style.borderColor = "rgba(255,255,255,0.1)";
                       e.target.style.background = "rgba(255,255,255,0.05)";
                     }
@@ -238,7 +270,7 @@ export default function SignInPage() {
                     justifyContent: "center",
                     gap: 8,
                     cursor: loading ? "not-allowed" : "pointer",
-                    transition: "background 0.15s, color 0.15s",
+                    boxSizing: "border-box",
                   }}
                 >
                   {loading ? (
@@ -272,6 +304,7 @@ export default function SignInPage() {
                 color: "rgba(255,255,255,0.4)",
                 textAlign: "center",
                 lineHeight: 1.5,
+                margin: 0,
               }}
             >
               By continuing you agree to our Terms.
@@ -296,15 +329,23 @@ function MagicLinkSent({
 }) {
   return (
     <>
-      <div className="flex-1 flex flex-col justify-center items-center text-center gap-7">
-        {/* Envelope icon */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          textAlign: "center",
+          gap: 28,
+        }}
+      >
         <div
           style={{
             width: 80,
             height: 80,
             borderRadius: 28,
             background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(30px) saturate(180%)",
             border: "0.5px solid rgba(255,255,255,0.1)",
             boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
             display: "flex",
@@ -347,18 +388,25 @@ function MagicLinkSent({
               letterSpacing: "-0.02em",
               lineHeight: 1.1,
               marginBottom: 12,
+              color: "#fff",
             }}
           >
             Check your inbox
           </h1>
-          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+          <p
+            style={{
+              fontSize: 15,
+              color: "rgba(255,255,255,0.55)",
+              lineHeight: 1.6,
+              margin: 0,
+            }}
+          >
             We sent a magic link to
             <br />
             <span style={{ color: "#fff", fontWeight: 500 }}>{email}</span>
           </p>
         </div>
 
-        {/* Expiry pill */}
         <div
           style={{
             display: "flex",
@@ -366,7 +414,6 @@ function MagicLinkSent({
             gap: 8,
             padding: "10px 16px",
             background: "rgba(255,255,255,0.08)",
-            backdropFilter: "blur(30px)",
             border: "0.5px solid rgba(255,255,255,0.1)",
             borderRadius: 999,
             fontSize: 13,
@@ -395,7 +442,6 @@ function MagicLinkSent({
           style={{
             width: "100%",
             background: "rgba(255,255,255,0.08)",
-            backdropFilter: "blur(30px)",
             border: "0.5px solid rgba(255,255,255,0.1)",
             boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
             color: "#fff",
@@ -406,11 +452,19 @@ function MagicLinkSent({
             fontFamily: "inherit",
             cursor: loading ? "not-allowed" : "pointer",
             opacity: loading ? 0.6 : 1,
+            boxSizing: "border-box",
           }}
         >
           {loading ? "Sending…" : "Resend link"}
         </button>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
+        <p
+          style={{
+            fontSize: 12,
+            color: "rgba(255,255,255,0.4)",
+            textAlign: "center",
+            margin: 0,
+          }}
+        >
           Didn&apos;t get it? Check your spam folder.
         </p>
       </div>
@@ -420,7 +474,13 @@ function MagicLinkSent({
 
 function LoadingSpinner() {
   return (
-    <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <svg
+      style={{ animation: "spin 1s linear infinite" }}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
       <circle
         cx="12"
         cy="12"
@@ -435,6 +495,7 @@ function LoadingSpinner() {
         strokeWidth="3"
         strokeLinecap="round"
       />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </svg>
   );
 }

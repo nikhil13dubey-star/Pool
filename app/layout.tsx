@@ -32,8 +32,16 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
-      <body className="h-full antialiased bg-[#050505]">
-        <div className="relative mx-auto h-full max-w-[430px] overflow-x-hidden">
+      <body className="h-full antialiased" style={{ background: "#050505" }}>
+        <div
+          style={{
+            position: "relative",
+            margin: "0 auto",
+            minHeight: "100%",
+            maxWidth: 430,
+            overflowX: "hidden",
+          }}
+        >
           {children}
         </div>
       </body>
