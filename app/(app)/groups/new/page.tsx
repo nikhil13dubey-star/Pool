@@ -4,15 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { GroupIcon } from "@/components/shared/group-icon";
-import { cn } from "@/lib/client/utils";
 
 type GroupType = "TRIP" | "HOME" | "COUPLE" | "OTHER";
 
-const types: { value: GroupType; label: string }[] = [
-  { value: "TRIP", label: "Trip" },
-  { value: "HOME", label: "Home" },
-  { value: "COUPLE", label: "Couple" },
-  { value: "OTHER", label: "Other" },
+const types: { value: GroupType; label: string; subtitle: string }[] = [
+  { value: "TRIP", label: "Trip", subtitle: "Vacations, events" },
+  { value: "HOME", label: "Home", subtitle: "Roommates, family" },
+  { value: "COUPLE", label: "Couple", subtitle: "You & partner" },
+  { value: "OTHER", label: "Other", subtitle: "Anything else" },
 ];
 
 export default function NewGroupPage() {
@@ -89,20 +88,60 @@ export default function NewGroupPage() {
             Type
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {types.map(({ value, label }) => (
+            {types.map(({ value, label, subtitle }) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setType(value)}
-                className={cn(
-                  "flex items-center gap-3 p-4 rounded-[16px] pool-press transition-all duration-200",
-                  type === value
-                    ? "border border-white/25 bg-white/8"
-                    : "border border-white/7 bg-white/5",
-                )}
+                style={{
+                  padding: 16,
+                  textAlign: "center",
+                  borderRadius: 16,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  background:
+                    type === value ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.05)",
+                  border: `0.5px solid ${type === value ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.08)"}`,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
               >
-                <GroupIcon type={value} size={36} />
-                <span className="text-[15px] font-medium text-white">{label}</span>
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "50%",
+                    background:
+                      "linear-gradient(180deg, rgba(255,255,255,0.04), transparent)",
+                    pointerEvents: "none",
+                  }}
+                />
+                <div style={{ position: "relative", zIndex: 2 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <GroupIcon type={value} size={40} />
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>
+                    {label}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "rgba(255,255,255,0.55)",
+                      marginTop: 2,
+                    }}
+                  >
+                    {subtitle}
+                  </div>
+                </div>
               </button>
             ))}
           </div>

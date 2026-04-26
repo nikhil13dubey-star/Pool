@@ -15,6 +15,7 @@ export default async function HomePage() {
       group: {
         include: {
           members: { where: { isActive: true }, include: { user: true } },
+          _count: { select: { expenses: { where: { isDeleted: false } } } },
         },
       },
     },
@@ -38,11 +39,19 @@ export default async function HomePage() {
     .filter((g) => g.netBalance < 0)
     .reduce((sum, g) => sum + Math.abs(g.netBalance), 0);
 
+  const unreadCount = await prisma.notification.count({
+    where: { userId: user.id, isRead: false },
+  });
+
   const greeting = getGreeting();
 
   return (
     <>
-      <HomeHeader userName={user.displayName} greeting={greeting} />
+      <HomeHeader
+        userName={user.displayName}
+        greeting={greeting}
+        unreadCount={unreadCount}
+      />
 
       <BalanceHero netOwed={totalOwed} netOwe={totalOwe} />
 

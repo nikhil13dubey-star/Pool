@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -49,32 +49,70 @@ export function GroupDetailClient({ group, currentUser, balances }: Props) {
         <div className="flex-1 text-center text-[17px] font-semibold tracking-[-0.01em]">
           {group.name}
         </div>
-        <Link href={`/groups/${group.id}/recycle-bin`}>
+        <Link href={`/groups/${group.id}/settings`}>
           <IconButton>
             <DotsVerticalIcon size={16} />
           </IconButton>
         </Link>
       </div>
 
-      {/* Tab strip */}
-      <div className="flex gap-0 px-6 pb-4">
-        {(["overview", "expenses", "activity"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "flex-1 py-2 text-[13px] font-medium capitalize pool-press transition-all duration-200 border-b-[1.5px]",
-              tab === t ? "text-white border-white" : "border-transparent",
-            )}
-            style={tab !== t ? { color: "rgba(255,255,255,0.4)" } : undefined}
-          >
-            {t}
-          </button>
-        ))}
+      {/* Tab strip — segmented glass style */}
+      <div style={{ padding: "0 14px 16px" }}>
+        <div
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            backdropFilter: "blur(30px)",
+            border: "0.5px solid rgba(255,255,255,0.07)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+            borderRadius: 16,
+            padding: 4,
+            display: "flex",
+            gap: 2,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "50%",
+              background: "linear-gradient(180deg, rgba(255,255,255,0.04), transparent)",
+              pointerEvents: "none",
+            }}
+          />
+          {(["overview", "expenses", "activity"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                flex: 1,
+                padding: "8px 10px",
+                textAlign: "center",
+                fontSize: 13,
+                fontWeight: tab === t ? 600 : 500,
+                color: tab === t ? "#fff" : "rgba(255,255,255,0.55)",
+                background: tab === t ? "rgba(255,255,255,0.12)" : "transparent",
+                borderRadius: 12,
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                position: "relative",
+                zIndex: 2,
+                textTransform: "capitalize",
+                transition: "all 0.2s",
+              }}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab content */}
-      <div className="px-3.5">
+      <div>
         {tab === "overview" && (
           <OverviewTab
             group={group}
@@ -139,58 +177,232 @@ function OverviewTab({
   const oweEntries = Object.entries(myBalance?.owes ?? {}).filter(([, amt]) => amt > 0);
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Balance card */}
-      {(owedEntries.length > 0 || oweEntries.length > 0) && (
-        <GlassCard className="anim-slide-up">
-          <div className="flex flex-col gap-3">
-            {owedEntries.map(([userId, amount]) => (
-              <BalanceRow
-                key={userId}
-                user={memberMap[userId]}
-                amount={amount}
-                direction="owed"
-              />
-            ))}
-            {oweEntries.map(([userId, amount]) => (
-              <BalanceRow
-                key={userId}
-                user={memberMap[userId]}
-                amount={amount}
-                direction="owe"
-              />
-            ))}
-          </div>
-          <div className="mt-4 pt-3 border-t border-white/7">
-            <Link href={`/groups/${group.id}/settle`}>
-              <button
-                className="w-full text-[15px] font-semibold py-2 rounded-[12px] pool-press transition-colors"
+    <div style={{ paddingBottom: 8 }}>
+      {/* Avatar stack + balance hero */}
+      <div style={{ textAlign: "center", padding: "0 24px 24px" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+          {group.members.slice(0, 4).map((m, i) => (
+            <div
+              key={m.id}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: [
+                  "linear-gradient(135deg, #ff9f0a, #c8740a)",
+                  "linear-gradient(135deg, #30d158, #1a8a3a)",
+                  "linear-gradient(135deg, #ff6482, #c84368)",
+                  "linear-gradient(135deg, #64d2ff, #3590bb)",
+                ][i % 4],
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#fff",
+                marginRight: i < Math.min(group.members.length, 4) - 1 ? -10 : 0,
+                border: "2px solid rgba(0,0,0,0.4)",
+                position: "relative",
+                flexShrink: 0,
+                overflow: "hidden",
+              }}
+            >
+              <div
                 style={{
-                  background: "rgba(100,210,255,0.13)",
-                  color: "#64d2ff",
-                  border: "0.5px solid rgba(100,210,255,0.22)",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "50%",
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)",
+                  pointerEvents: "none",
+                }}
+              />
+              <span style={{ position: "relative", zIndex: 2 }}>
+                {(m.user.displayName.trim()[0] ?? "?").toUpperCase()}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 4 }}>
+          In this group, you&apos;re owed
+        </div>
+        <div
+          style={{
+            fontSize: 44,
+            fontWeight: 700,
+            letterSpacing: "-0.03em",
+            lineHeight: 1,
+            color:
+              myBalance && myBalance.net > 0
+                ? "#30d158"
+                : myBalance && myBalance.net < 0
+                  ? "#ff9f0a"
+                  : "rgba(255,255,255,0.55)",
+            fontFeatureSettings: "'tnum'",
+          }}
+        >
+          {myBalance && myBalance.net > 0
+            ? "+"
+            : myBalance && myBalance.net < 0
+              ? "−"
+              : ""}
+          ₹
+          {Math.abs(myBalance?.net ?? 0).toLocaleString("en-IN", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          })}
+        </div>
+      </div>
+
+      {/* Balances section */}
+      <div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "6px 24px 12px",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 20,
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              color: "#fff",
+            }}
+          >
+            Balances
+          </span>
+          <span
+            style={{
+              fontSize: 14,
+              color: "#64d2ff",
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <path d="M3 12l3 3 5-5M14 9h7M14 15h5" />
+            </svg>
+            Simplify
+          </span>
+        </div>
+
+        <div style={{ padding: "0 14px" }}>
+          {(owedEntries.length > 0 || oweEntries.length > 0) && (
+            <div
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(30px)",
+                border: "0.5px solid rgba(255,255,255,0.07)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+                borderRadius: 20,
+                overflow: "hidden",
+                position: "relative",
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "50%",
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,0.04), transparent)",
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                style={{
+                  padding: "12px 16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
                 }}
               >
-                Settle up
-              </button>
-            </Link>
-          </div>
-        </GlassCard>
-      )}
+                {owedEntries.map(([userId, amount]) => (
+                  <BalanceRow
+                    key={userId}
+                    user={memberMap[userId]}
+                    amount={amount}
+                    direction="owed"
+                  />
+                ))}
+                {oweEntries.map(([userId, amount]) => (
+                  <BalanceRow
+                    key={userId}
+                    user={memberMap[userId]}
+                    amount={amount}
+                    direction="owe"
+                  />
+                ))}
+              </div>
+              <div
+                style={{
+                  borderTop: "0.5px solid rgba(255,255,255,0.07)",
+                  padding: "12px 16px",
+                }}
+              >
+                <Link href={`/groups/${group.id}/settle`}>
+                  <button
+                    style={{
+                      width: "100%",
+                      padding: "10px 0",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      borderRadius: 12,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      background: "rgba(100,210,255,0.13)",
+                      color: "#64d2ff",
+                      border: "0.5px solid rgba(100,210,255,0.22)",
+                    }}
+                  >
+                    Settle up
+                  </button>
+                </Link>
+              </div>
+            </div>
+          )}
 
-      {owedEntries.length === 0 && oweEntries.length === 0 && (
-        <GlassCard className="anim-slide-up">
-          <div
-            className="text-center py-2 text-[14px] font-medium"
-            style={{ color: "rgba(255,255,255,0.55)" }}
-          >
-            ✓ All settled up in this group
-          </div>
-        </GlassCard>
-      )}
+          {owedEntries.length === 0 && oweEntries.length === 0 && (
+            <div
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "0.5px solid rgba(255,255,255,0.07)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+                borderRadius: 20,
+                padding: "16px 16px",
+                textAlign: "center",
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.55)" }}
+              >
+                ✓ All settled up in this group
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Members */}
-      <div>
+      <div style={{ padding: "0 14px" }}>
         <div
           className="text-[11px] font-medium uppercase tracking-[0.1em] px-1 mb-3"
           style={{ color: "rgba(255,255,255,0.4)" }}
@@ -353,97 +565,422 @@ function ExpensesTab({
     );
   }
 
+  // Group by date
+  const grouped: {
+    dateLabel: string;
+    dateTotal: number;
+    expenses: typeof group.expenses;
+  }[] = [];
+  const seen = new Map<string, number>();
+
+  for (const expense of group.expenses) {
+    const d = new Date(expense.expenseDate);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+    let label: string;
+    if (diffDays === 0) label = "Today";
+    else if (diffDays === 1) label = "Yesterday";
+    else label = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+
+    const idx = seen.get(label);
+    if (idx !== undefined) {
+      grouped[idx].dateTotal += Number(expense.amount);
+      grouped[idx].expenses.push(expense);
+    } else {
+      seen.set(label, grouped.length);
+      grouped.push({
+        dateLabel: label,
+        dateTotal: Number(expense.amount),
+        expenses: [expense],
+      });
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-2">
-      {group.expenses.map((expense, i) => (
-        <Link key={expense.id} href={`/groups/${group.id}/expenses/${expense.id}`}>
-          <GlassCard
-            className={cn("anim-slide-up")}
-            style={{ animationDelay: `${i * 30}ms` } as React.CSSProperties}
+    <div style={{ paddingBottom: 8 }}>
+      {grouped.map(({ dateLabel, dateTotal, expenses: dayExpenses }) => (
+        <div key={dateLabel}>
+          <div
+            style={{
+              padding: "4px 24px 8px",
+              fontSize: 11,
+              color: "rgba(255,255,255,0.4)",
+              textTransform: "uppercase" as const,
+              letterSpacing: "0.1em",
+              fontWeight: 500,
+              display: "flex",
+              justifyContent: "space-between",
+            }}
           >
-            <div className="flex items-center gap-3">
-              <CategoryIcon category={expense.category} />
-              <div className="flex-1 min-w-0">
-                <div className="text-[15px] font-semibold text-white truncate mb-0.5">
-                  {expense.description}
-                </div>
-                <div className="text-[12px]" style={{ color: "rgba(255,255,255,0.55)" }}>
-                  Paid by{" "}
-                  {expense.paidById === currentUser.id
-                    ? "you"
-                    : expense.paidBy.displayName}
-                </div>
-              </div>
-              <div className="text-right">
-                <div
-                  className="text-[15px] font-semibold"
-                  style={{ fontFeatureSettings: "'tnum'" }}
+            <span>{dateLabel}</span>
+            <span style={{ fontFeatureSettings: "'tnum'" }}>
+              ₹{dateTotal.toLocaleString("en-IN")}
+            </span>
+          </div>
+          <div
+            style={{
+              padding: "0 14px",
+              display: "flex",
+              flexDirection: "column" as const,
+              gap: 6,
+              marginBottom: 16,
+            }}
+          >
+            {dayExpenses.map((expense) => {
+              const myShare = expense.shares.find((s) => s.userId === currentUser.id);
+              const myShareAmt = myShare ? Number(myShare.amountOwed) : 0;
+              const iPaid = expense.paidById === currentUser.id;
+              const myNet = iPaid ? Number(expense.amount) - myShareAmt : -myShareAmt;
+              return (
+                <Link
+                  key={expense.id}
+                  href={`/groups/${group.id}/expenses/${expense.id}`}
+                  style={{ textDecoration: "none" }}
                 >
-                  ₹
-                  {Number(expense.amount).toLocaleString("en-IN", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })}
-                </div>
-                <div className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-                  {expense.category}
-                </div>
-              </div>
-            </div>
-          </GlassCard>
-        </Link>
+                  <div
+                    style={{
+                      padding: "12px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      background: "rgba(255,255,255,0.05)",
+                      border: "0.5px solid rgba(255,255,255,0.07)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+                      borderRadius: 20,
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: "50%",
+                        background:
+                          "linear-gradient(180deg, rgba(255,255,255,0.04), transparent)",
+                        pointerEvents: "none",
+                      }}
+                    />
+                    <ExpenseCategoryIcon category={expense.category} />
+                    <div
+                      style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 2 }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#fff",
+                          marginBottom: 1,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {expense.description}
+                      </div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>
+                        {expense.paidById === currentUser.id
+                          ? "You paid"
+                          : `${expense.paidBy.displayName} paid`}{" "}
+                        · {expense.splitMethod === "EQUAL" ? "split equally" : "split"}
+                      </div>
+                    </div>
+                    <div style={{ position: "relative", zIndex: 2, textAlign: "right" }}>
+                      <div
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 600,
+                          fontFeatureSettings: "'tnum'",
+                          color: "#fff",
+                        }}
+                      >
+                        ₹
+                        {Number(expense.amount).toLocaleString("en-IN", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </div>
+                      {myNet !== 0 && (
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: myNet > 0 ? "#30d158" : "#ff9f0a",
+                            fontFeatureSettings: "'tnum'",
+                          }}
+                        >
+                          {myNet > 0 ? "+" : "−"}₹
+                          {Math.abs(myNet).toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       ))}
     </div>
   );
 }
 
-function CategoryIcon({ category }: { category: string }) {
-  const colorMap: Record<string, { bg: string; color: string }> = {
-    Food: { bg: "rgba(255,159,10,0.2)", color: "#ffb340" },
-    Travel: { bg: "rgba(100,210,255,0.2)", color: "#64d2ff" },
-    Rent: { bg: "rgba(48,209,88,0.2)", color: "#30d158" },
-    Entertainment: { bg: "rgba(191,90,242,0.2)", color: "#bf5af2" },
-    Groceries: { bg: "rgba(48,209,88,0.2)", color: "#30d158" },
-    Utilities: { bg: "rgba(100,210,255,0.2)", color: "#64d2ff" },
-    Health: { bg: "rgba(255,69,58,0.2)", color: "#ff453a" },
-    Shopping: { bg: "rgba(255,100,130,0.2)", color: "#ff6482" },
-    Other: { bg: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)" },
+function ExpenseCategoryIcon({ category }: { category: string }) {
+  const map: Record<string, { bg: string; color: string }> = {
+    Food: {
+      bg: "linear-gradient(135deg, rgba(255,215,10,0.35), rgba(255,215,10,0.18))",
+      color: "#ffd60a",
+    },
+    Travel: {
+      bg: "linear-gradient(135deg, rgba(255,159,10,0.4), rgba(255,159,10,0.2))",
+      color: "#ffb340",
+    },
+    Rent: {
+      bg: "linear-gradient(135deg, rgba(48,209,88,0.35), rgba(48,209,88,0.18))",
+      color: "#30d158",
+    },
+    Entertainment: {
+      bg: "linear-gradient(135deg, rgba(100,210,255,0.3), rgba(100,210,255,0.15))",
+      color: "#64d2ff",
+    },
+    Groceries: {
+      bg: "linear-gradient(135deg, rgba(48,209,88,0.35), rgba(48,209,88,0.18))",
+      color: "#30d158",
+    },
+    Utilities: {
+      bg: "linear-gradient(135deg, rgba(100,210,255,0.3), rgba(100,210,255,0.15))",
+      color: "#64d2ff",
+    },
+    Health: {
+      bg: "linear-gradient(135deg, rgba(255,69,58,0.35), rgba(255,69,58,0.18))",
+      color: "#ff453a",
+    },
+    Shopping: {
+      bg: "linear-gradient(135deg, rgba(255,100,130,0.35), rgba(255,100,130,0.18))",
+      color: "#ff6482",
+    },
+    Other: {
+      bg: "linear-gradient(135deg, rgba(100,210,255,0.3), rgba(100,210,255,0.15))",
+      color: "#64d2ff",
+    },
   };
-  const style = colorMap[category] ?? colorMap["Other"];
-
+  const s = map[category] ?? map.Other;
   return (
     <div
-      className="w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0 text-[17px]"
-      style={{ background: style.bg, color: style.color }}
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        background: s.bg,
+        color: s.color,
+        boxShadow: `inset 0 0 0 0.5px ${s.color}40`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        position: "relative",
+        zIndex: 2,
+        overflow: "hidden",
+      }}
     >
-      {categoryEmoji(category)}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "50%",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.25), transparent)",
+          pointerEvents: "none",
+        }}
+      />
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        style={{ position: "relative", zIndex: 2 }}
+      >
+        <rect x="2" y="3" width="20" height="18" rx="2" />
+        <path d="M2 9h20M9 21V9" />
+      </svg>
     </div>
   );
 }
 
-function categoryEmoji(cat: string): string {
-  const m: Record<string, string> = {
-    Food: "🍽",
-    Groceries: "🛒",
-    Rent: "🏠",
-    Utilities: "⚡️",
-    Travel: "✈️",
-    Entertainment: "🎬",
-    Health: "💊",
-    Shopping: "🛍",
-    Other: "•",
-  };
-  return m[cat] ?? "•";
-}
-
 // ─── Activity Tab ─────────────────────────────────────────────────────────────
 
-function ActivityTab({ groupId: _groupId }: { groupId: string }) {
+interface ActivityItem {
+  type: string;
+  actor: string;
+  text: string;
+  time: string;
+  amount?: number;
+}
+
+function timeAgo(date: string): string {
+  const diff = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return mins <= 1 ? "just now" : `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hr`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  return `${days} days ago`;
+}
+
+function ActivityRow({ item }: { item: ActivityItem }) {
+  const initial = (item.actor.trim()[0] ?? "?").toUpperCase();
+  const gradients = [
+    "linear-gradient(135deg, #ff9f0a, #c8740a)",
+    "linear-gradient(135deg, #30d158, #1a8a3a)",
+    "linear-gradient(135deg, #ff6482, #c84368)",
+    "linear-gradient(135deg, #64d2ff, #3590bb)",
+    "linear-gradient(135deg, #bf5af2, #8a3eb5)",
+  ];
+  const bg = gradients[initial.charCodeAt(0) % gradients.length];
+
+  // Parse bold markers
+  const parts = item.text.split(/\*\*(.*?)\*\*/g);
+
   return (
-    <div className="text-center py-16 anim-fade">
-      <div className="text-[13px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-        Activity will appear here
+    <div
+      style={{
+        display: "flex",
+        gap: 14,
+        padding: "8px 0",
+        position: "relative",
+        zIndex: 2,
+      }}
+    >
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          background: bg,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 15,
+          fontWeight: 600,
+          color: "#fff",
+          flexShrink: 0,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "50%",
+            background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)",
+            pointerEvents: "none",
+          }}
+        />
+        <span style={{ position: "relative", zIndex: 2 }}>{initial}</span>
       </div>
+      <div style={{ flex: 1, paddingTop: 4 }}>
+        <div style={{ fontSize: 14, lineHeight: 1.4, color: "#fff" }}>
+          <strong style={{ fontWeight: 600 }}>{item.actor}</strong>{" "}
+          {parts.map((part, i) =>
+            i % 2 === 1 ? (
+              <strong key={i} style={{ fontWeight: 600 }}>
+                {part}
+              </strong>
+            ) : (
+              <span key={i}>{part}</span>
+            ),
+          )}
+        </div>
+        {item.type === "settled" && (
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+            {timeAgo(item.time)} · via UPI
+          </div>
+        )}
+        {item.type !== "settled" && (
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+            {timeAgo(item.time)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ActivityTab({ groupId }: { groupId: string }) {
+  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/groups/${groupId}/activity`)
+      .then((r) => r.json())
+      .then((data) => {
+        setItems(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [groupId]);
+
+  if (loading)
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          padding: "40px 0",
+          color: "rgba(255,255,255,0.35)",
+          fontSize: 14,
+        }}
+      >
+        Loading…
+      </div>
+    );
+
+  if (items.length === 0) {
+    return (
+      <div style={{ padding: "0 24px", position: "relative" }}>
+        <div
+          style={{
+            position: "absolute",
+            left: 39,
+            top: 12,
+            bottom: 12,
+            width: 1,
+            background: "rgba(255,255,255,0.08)",
+          }}
+        />
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+            No activity yet
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: "0 24px", position: "relative" }}>
+      <div
+        style={{
+          position: "absolute",
+          left: 39,
+          top: 12,
+          bottom: 12,
+          width: 1,
+          background: "rgba(255,255,255,0.08)",
+        }}
+      />
+      {items.map((item, i) => (
+        <ActivityRow key={i} item={item} />
+      ))}
     </div>
   );
 }
