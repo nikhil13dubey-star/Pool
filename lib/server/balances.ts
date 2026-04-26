@@ -100,3 +100,63 @@ export async function computeBalances(groupId: string): Promise<UserBalance[]> {
 
   return result;
 }
+
+// Fetches all expenses + settlements for multiple groups in 2 queries,
+// then computes the given user's net balance per group in memory.
+// Use this on the home page instead of calling computeBalances() per-group.
+export async function computeAllGroupBalances(
+  groupIds: string[],
+  userId: string,
+): Promise<Record<string, number>> {
+  if (groupIds.length === 0) return {};
+
+  const [expenses, settlements] = await Promise.all([
+    prisma.expense.findMany({
+      where: { groupId: { in: groupIds }, isDeleted: false },
+      select: {
+        groupId: true,
+        paidById: true,
+        shares: { select: { userId: true, amountOwed: true } },
+      },
+    }),
+    prisma.settlement.findMany({
+      where: { groupId: { in: groupIds } },
+      select: { groupId: true, fromUserId: true, toUserId: true, amount: true },
+    }),
+  ]);
+
+  const result: Record<string, number> = {};
+
+  for (const groupId of groupIds) {
+    let net = new Decimal(0);
+
+    for (const expense of expenses) {
+      if (expense.groupId !== groupId) continue;
+      if (expense.paidById === userId) {
+        for (const share of expense.shares) {
+          if (share.userId !== userId) {
+            net = net.plus(new Decimal(share.amountOwed.toString()));
+          }
+        }
+      } else {
+        const myShare = expense.shares.find((s) => s.userId === userId);
+        if (myShare) {
+          net = net.minus(new Decimal(myShare.amountOwed.toString()));
+        }
+      }
+    }
+
+    for (const s of settlements) {
+      if (s.groupId !== groupId) continue;
+      if (s.fromUserId === userId) {
+        net = net.plus(new Decimal(s.amount.toString()));
+      } else if (s.toUserId === userId) {
+        net = net.minus(new Decimal(s.amount.toString()));
+      }
+    }
+
+    result[groupId] = net.toDecimalPlaces(2).toNumber();
+  }
+
+  return result;
+}

@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/server/auth-helpers";
 import { prisma } from "@/lib/server/db";
-import { computeBalances } from "@/lib/server/balances";
+import { computeAllGroupBalances } from "@/lib/server/balances";
 import { HomeHeader } from "@/components/home/home-header";
 import { BalanceHero } from "@/components/home/balance-hero";
 import { GroupList } from "@/components/home/group-list";
@@ -9,27 +9,30 @@ import { Fab } from "@/components/shared/fab";
 export default async function HomePage() {
   const user = await getCurrentUser();
 
-  const memberships = await prisma.groupMember.findMany({
-    where: { userId: user.id, isActive: true, group: { isDeleted: false } },
-    include: {
-      group: {
-        include: {
-          members: { where: { isActive: true }, include: { user: true } },
-          _count: { select: { expenses: { where: { isDeleted: false } } } },
+  const [memberships, unreadCount] = await Promise.all([
+    prisma.groupMember.findMany({
+      where: { userId: user.id, isActive: true, group: { isDeleted: false } },
+      include: {
+        group: {
+          include: {
+            members: { where: { isActive: true }, include: { user: true } },
+            _count: { select: { expenses: { where: { isDeleted: false } } } },
+          },
         },
       },
-    },
-    orderBy: { group: { updatedAt: "desc" } },
-  });
-
-  // Compute per-group balances in parallel
-  const groupsWithBalances = await Promise.all(
-    memberships.map(async ({ group }: { group: (typeof memberships)[0]["group"] }) => {
-      const balances = await computeBalances(group.id);
-      const myBalance = balances.find((b) => b.userId === user.id);
-      return { group, netBalance: myBalance?.net ?? 0 };
+      orderBy: { group: { updatedAt: "desc" } },
     }),
-  );
+    prisma.notification.count({ where: { userId: user.id, isRead: false } }),
+  ]);
+
+  const groupIds = memberships.map(({ group }) => group.id);
+  // One batched call = 2 DB queries total regardless of how many groups
+  const balanceMap = await computeAllGroupBalances(groupIds, user.id);
+
+  const groupsWithBalances = memberships.map(({ group }) => ({
+    group,
+    netBalance: balanceMap[group.id] ?? 0,
+  }));
 
   const totalOwed = groupsWithBalances
     .filter((g) => g.netBalance > 0)
@@ -38,10 +41,6 @@ export default async function HomePage() {
   const totalOwe = groupsWithBalances
     .filter((g) => g.netBalance < 0)
     .reduce((sum, g) => sum + Math.abs(g.netBalance), 0);
-
-  const unreadCount = await prisma.notification.count({
-    where: { userId: user.id, isRead: false },
-  });
 
   const greeting = getGreeting();
 
@@ -52,11 +51,8 @@ export default async function HomePage() {
         greeting={greeting}
         unreadCount={unreadCount}
       />
-
       <BalanceHero netOwed={totalOwed} netOwe={totalOwe} />
-
       <GroupList groups={groupsWithBalances} currentUserId={user.id} />
-
       <Fab />
     </>
   );
