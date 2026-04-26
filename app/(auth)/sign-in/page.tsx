@@ -2,9 +2,6 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ArrowRightIcon } from "@/components/shared/icons";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -17,13 +14,12 @@ export default function SignInPage() {
     if (!email.trim()) return;
     setLoading(true);
     setError("");
-
     try {
       const result = await signIn("resend", {
         email: email.trim().toLowerCase(),
         redirect: false,
+        callbackUrl: "/",
       });
-
       if (result?.error) {
         setError("Something went wrong. Try again.");
       } else {
@@ -31,6 +27,20 @@ export default function SignInPage() {
       }
     } catch {
       setError("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!email.trim()) return;
+    setLoading(true);
+    try {
+      await signIn("resend", {
+        email: email.trim().toLowerCase(),
+        redirect: false,
+        callbackUrl: "/",
+      });
     } finally {
       setLoading(false);
     }
@@ -47,8 +57,10 @@ export default function SignInPage() {
       {/* Ambient blobs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div
-          className="absolute w-[400px] h-[400px] rounded-full"
+          className="absolute rounded-full"
           style={{
+            width: 400,
+            height: 400,
             background: "rgba(120,120,130,0.18)",
             filter: "blur(80px)",
             top: -100,
@@ -56,8 +68,10 @@ export default function SignInPage() {
           }}
         />
         <div
-          className="absolute w-[350px] h-[350px] rounded-full"
+          className="absolute rounded-full"
           style={{
+            width: 350,
+            height: 350,
             background: "rgba(140,140,145,0.14)",
             filter: "blur(80px)",
             top: 220,
@@ -67,137 +81,361 @@ export default function SignInPage() {
       </div>
 
       <div className="relative z-10 flex flex-col flex-1 px-7 pb-8">
-        <div className="flex-1 flex flex-col justify-center gap-8">
-          {/* Logo mark */}
-          <div
-            className="w-16 h-16 rounded-[22px] flex items-center justify-center relative overflow-hidden anim-scale-pop"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05))",
-              border: "0.5px solid rgba(255,255,255,0.15)",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.25)",
-            }}
-          >
-            <div
-              className="absolute top-0 left-0 right-0 h-1/2 rounded-[22px]"
-              style={{
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,0.15), transparent)",
-              }}
-            />
-            <div
-              className="w-9 h-9 rounded-full bg-white/95 relative z-10"
-              style={{
-                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              }}
-            />
-          </div>
+        {sent ? (
+          <MagicLinkSent email={email} onResend={handleResend} loading={loading} />
+        ) : (
+          <>
+            <div className="flex-1 flex flex-col justify-center gap-8">
+              {/* Logo mark */}
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 22,
+                  background:
+                    "linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05))",
+                  border: "0.5px solid rgba(255,255,255,0.15)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "50%",
+                    background:
+                      "linear-gradient(180deg, rgba(255,255,255,0.15), transparent)",
+                  }}
+                />
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.95)",
+                    position: "relative",
+                    zIndex: 2,
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "-8%",
+                      width: "116%",
+                      height: "45%",
+                      background: "rgba(0,0,0,0.08)",
+                      borderRadius: "50%",
+                    }}
+                  />
+                </div>
+              </div>
 
-          {sent ? (
-            <VerifyState email={email} />
-          ) : (
-            <>
-              <div className="anim-slide-up">
+              <div>
                 <h1
-                  className="text-[36px] font-bold tracking-[-0.03em] leading-[1.05] mb-3"
-                  style={{ letterSpacing: "-0.03em" }}
+                  style={{
+                    fontSize: 36,
+                    fontWeight: 700,
+                    letterSpacing: "-0.03em",
+                    lineHeight: 1.05,
+                    marginBottom: 12,
+                  }}
                 >
                   Welcome to Pool.
                 </h1>
                 <p
-                  className="text-[16px] leading-relaxed"
-                  style={{ color: "rgba(255,255,255,0.55)" }}
+                  style={{
+                    fontSize: 16,
+                    color: "rgba(255,255,255,0.55)",
+                    lineHeight: 1.5,
+                  }}
                 >
-                  Split with friends. Settle in seconds.
-                  <br />
-                  No ads, no limits.
+                  Split with friends. Settle in seconds. No ads, no limits.
                 </p>
               </div>
 
-              <form
-                onSubmit={handleSubmit}
-                className="w-full anim-slide-up flex flex-col gap-4"
-              >
-                <Input
+              <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.4)",
+                    marginBottom: 8,
+                    paddingLeft: 4,
+                  }}
+                >
+                  Email address
+                </div>
+                <input
                   type="email"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  label="Email address"
                   autoComplete="email"
                   autoFocus
                   required
-                  focused={!!email}
-                  error={error}
+                  style={{
+                    width: "100%",
+                    background: email
+                      ? "rgba(255,255,255,0.08)"
+                      : "rgba(255,255,255,0.05)",
+                    backdropFilter: "blur(30px) saturate(180%)",
+                    border: `0.5px solid ${email ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.1)"}`,
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+                    borderRadius: 16,
+                    padding: "14px 16px",
+                    color: "#fff",
+                    fontSize: 15,
+                    fontFamily: "inherit",
+                    outline: "none",
+                    marginBottom: error ? 6 : 16,
+                    display: "block",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "rgba(255,255,255,0.25)";
+                    e.target.style.background = "rgba(255,255,255,0.08)";
+                  }}
+                  onBlur={(e) => {
+                    if (!email) {
+                      e.target.style.borderColor = "rgba(255,255,255,0.1)";
+                      e.target.style.background = "rgba(255,255,255,0.05)";
+                    }
+                  }}
                 />
-                <Button
+                {error && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#ff453a",
+                      marginBottom: 12,
+                      paddingLeft: 4,
+                    }}
+                  >
+                    {error}
+                  </div>
+                )}
+                <button
                   type="submit"
-                  loading={loading}
-                  disabled={!email.trim()}
-                  icon={!loading ? <ArrowRightIcon size={18} /> : undefined}
+                  disabled={!email.trim() || loading}
+                  style={{
+                    width: "100%",
+                    background:
+                      !email.trim() || loading ? "rgba(255,255,255,0.1)" : "#fff",
+                    color: !email.trim() || loading ? "rgba(255,255,255,0.4)" : "#000",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    border: "none",
+                    padding: 16,
+                    borderRadius: 16,
+                    fontFamily: "inherit",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    cursor: !email.trim() || loading ? "not-allowed" : "pointer",
+                    transition: "background 0.15s, color 0.15s",
+                  }}
                 >
-                  {loading ? "Sending link…" : "Continue with email"}
-                </Button>
+                  {loading ? (
+                    <>
+                      <LoadingSpinner />
+                      Sending link…
+                    </>
+                  ) : (
+                    <>
+                      Continue with email
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      >
+                        <path d="M5 12h14M13 5l7 7-7 7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
               </form>
-            </>
-          )}
-        </div>
+            </div>
 
-        <p
-          className="text-center text-[11px] leading-relaxed"
-          style={{ color: "rgba(255,255,255,0.4)" }}
-        >
-          By continuing you agree to our Terms.
-          <br />
-          We&apos;ll email you a magic link — no passwords.
-        </p>
+            <p
+              style={{
+                fontSize: 11,
+                color: "rgba(255,255,255,0.4)",
+                textAlign: "center",
+                lineHeight: 1.5,
+              }}
+            >
+              By continuing you agree to our Terms.
+              <br />
+              We&apos;ll email you a magic link — no passwords.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function VerifyState({ email }: { email: string }) {
+function MagicLinkSent({
+  email,
+  onResend,
+  loading,
+}: {
+  email: string;
+  onResend: () => void;
+  loading: boolean;
+}) {
   return (
-    <div className="anim-scale-pop flex flex-col gap-4">
-      <div
-        className="w-20 h-20 rounded-full flex items-center justify-center"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(100,210,255,0.25), rgba(100,210,255,0.1))",
-          border: "0.5px solid rgba(100,210,255,0.3)",
-          boxShadow:
-            "inset 0 1px 0 rgba(255,255,255,0.15), 0 0 60px rgba(100,210,255,0.2)",
-        }}
-      >
-        <svg
-          width="36"
-          height="36"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#64d2ff"
-          strokeWidth="2"
-          strokeLinecap="round"
+    <>
+      <div className="flex-1 flex flex-col justify-center items-center text-center gap-7">
+        {/* Envelope icon */}
+        <div
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: 28,
+            background: "rgba(255,255,255,0.05)",
+            backdropFilter: "blur(30px) saturate(180%)",
+            border: "0.5px solid rgba(255,255,255,0.1)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            overflow: "hidden",
+          }}
         >
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-          <polyline points="22,6 12,13 2,6" />
-        </svg>
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "50%",
+              background: "linear-gradient(180deg, rgba(255,255,255,0.08), transparent)",
+            }}
+          />
+          <svg
+            width="36"
+            height="36"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="M3 7l9 6 9-6" />
+          </svg>
+        </div>
+
+        <div>
+          <h1
+            style={{
+              fontSize: 28,
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.1,
+              marginBottom: 12,
+            }}
+          >
+            Check your inbox
+          </h1>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+            We sent a magic link to
+            <br />
+            <span style={{ color: "#fff", fontWeight: 500 }}>{email}</span>
+          </p>
+        </div>
+
+        {/* Expiry pill */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 16px",
+            background: "rgba(255,255,255,0.08)",
+            backdropFilter: "blur(30px)",
+            border: "0.5px solid rgba(255,255,255,0.1)",
+            borderRadius: 999,
+            fontSize: 13,
+            color: "rgba(255,255,255,0.55)",
+          }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+          </svg>
+          Link expires in 15 minutes
+        </div>
       </div>
-      <div>
-        <h2 className="text-[26px] font-bold tracking-tight leading-snug mb-2">
-          Check your email
-        </h2>
-        <p
-          className="text-[15px] leading-relaxed"
-          style={{ color: "rgba(255,255,255,0.55)" }}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <button
+          onClick={onResend}
+          disabled={loading}
+          style={{
+            width: "100%",
+            background: "rgba(255,255,255,0.08)",
+            backdropFilter: "blur(30px)",
+            border: "0.5px solid rgba(255,255,255,0.1)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
+            color: "#fff",
+            fontSize: 16,
+            fontWeight: 600,
+            padding: 16,
+            borderRadius: 16,
+            fontFamily: "inherit",
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.6 : 1,
+          }}
         >
-          We sent a magic link to <span className="text-white font-medium">{email}</span>.
-          <br />
-          Click it to sign in — no password needed.
+          {loading ? "Sending…" : "Resend link"}
+        </button>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
+          Didn&apos;t get it? Check your spam folder.
         </p>
       </div>
-      <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-        Link expires in 10 minutes. Check spam if you don&apos;t see it.
-      </p>
-    </div>
+    </>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeOpacity="0.3"
+        strokeWidth="3"
+      />
+      <path
+        d="M12 2a10 10 0 0 1 10 10"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
