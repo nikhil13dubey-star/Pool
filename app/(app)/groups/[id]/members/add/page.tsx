@@ -90,7 +90,7 @@ export default function AddMemberPage({ params }: Props) {
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "16px 20px",
+          padding: "24px 20px 16px",
           gap: 8,
         }}
       >

@@ -40,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             minHeight: "100%",
             maxWidth: 430,
             overflowX: "hidden",
+            boxShadow: "0 0 0 0.5px rgba(255,255,255,0.04), 0 0 80px rgba(0,0,0,0.6)",
           }}
         >
           {children}

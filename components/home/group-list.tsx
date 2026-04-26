@@ -18,7 +18,7 @@ interface GroupListProps {
 export function GroupList({ groups }: GroupListProps) {
   return (
     <div>
-      <div className="flex justify-between items-center px-6 pb-3">
+      <div className="flex justify-between items-center px-6 pb-3 pt-1.5">
         <span className="text-[20px] font-semibold tracking-[-0.02em] text-white">
           Groups
         </span>

@@ -83,7 +83,12 @@ export default function SearchPage() {
     <div style={{ minHeight: "100vh" }}>
       {/* Header */}
       <div
-        style={{ display: "flex", alignItems: "center", padding: "16px 20px", gap: 8 }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "24px 20px 16px",
+          gap: 8,
+        }}
       >
         <button
           onClick={() => router.back()}

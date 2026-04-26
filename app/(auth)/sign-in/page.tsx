@@ -5,28 +5,54 @@ import { signIn } from "next-auth/react";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
+  const [otpValue, setOtpValue] = useState("");
+  const [step, setStep] = useState<"email" | "otp">("email");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [otpError, setOtpError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
     setLoading(true);
-    setError("");
+    setEmailError("");
     try {
-      const result = await signIn("resend", {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      if (!res.ok) {
+        setEmailError("Something went wrong. Try again.");
+      } else {
+        setStep("otp");
+      }
+    } catch {
+      setEmailError("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleOtpSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!otpValue.trim()) return;
+    setLoading(true);
+    setOtpError("");
+    try {
+      const result = await signIn("credentials", {
         email: email.trim().toLowerCase(),
+        otp: otpValue.trim().toLowerCase(),
         redirect: false,
         callbackUrl: "/onboarding/profile",
       });
-      if (result?.error) {
-        setError("Something went wrong. Try again.");
-      } else {
-        setSent(true);
+      if (result?.error || !result?.ok) {
+        setOtpError("Wrong code. Try again.");
+        return;
       }
+      window.location.href = "/onboarding/profile";
     } catch {
-      setError("Something went wrong. Try again.");
+      setOtpError("Something went wrong. Try again.");
     } finally {
       setLoading(false);
     }
@@ -35,11 +61,12 @@ export default function SignInPage() {
   async function handleResend() {
     if (!email.trim()) return;
     setLoading(true);
+    setOtpError("");
     try {
-      await signIn("resend", {
-        email: email.trim().toLowerCase(),
-        redirect: false,
-        callbackUrl: "/onboarding/profile",
+      await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
     } finally {
       setLoading(false);
@@ -103,9 +130,197 @@ export default function SignInPage() {
           padding: "0 28px 32px",
         }}
       >
-        {sent ? (
-          <MagicLinkSent email={email} onResend={handleResend} loading={loading} />
+        {step === "otp" ? (
+          /* ── Step 2: OTP entry ── */
+          <>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: 32,
+              }}
+            >
+              {/* Back button */}
+              <button
+                onClick={() => {
+                  setStep("email");
+                  setOtpValue("");
+                  setOtpError("");
+                }}
+                style={{
+                  alignSelf: "flex-start",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  background: "none",
+                  border: "none",
+                  color: "#64d2ff",
+                  fontSize: 15,
+                  fontWeight: 500,
+                  fontFamily: "inherit",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                >
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+                Back
+              </button>
+
+              <div>
+                <h1
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.1,
+                    marginBottom: 12,
+                    color: "#fff",
+                  }}
+                >
+                  Check your email
+                </h1>
+                <p
+                  style={{
+                    fontSize: 15,
+                    color: "rgba(255,255,255,0.55)",
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}
+                >
+                  Enter the code we sent to{" "}
+                  <span style={{ color: "#fff", fontWeight: 500 }}>{email}</span>
+                </p>
+              </div>
+
+              <form onSubmit={handleOtpSubmit} style={{ width: "100%" }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.4)",
+                    marginBottom: 8,
+                    paddingLeft: 4,
+                  }}
+                >
+                  Sign-in code
+                </div>
+                <input
+                  type="text"
+                  placeholder="Enter code"
+                  value={otpValue}
+                  onChange={(e) => setOtpValue(e.target.value)}
+                  autoComplete="one-time-code"
+                  autoFocus
+                  required
+                  style={{
+                    width: "100%",
+                    background: otpValue
+                      ? "rgba(255,255,255,0.08)"
+                      : "rgba(255,255,255,0.05)",
+                    border: `0.5px solid ${otpValue ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.1)"}`,
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+                    borderRadius: 16,
+                    padding: "14px 16px",
+                    color: "#fff",
+                    fontSize: 22,
+                    fontWeight: 600,
+                    letterSpacing: "0.12em",
+                    textAlign: "center",
+                    fontFamily: "inherit",
+                    outline: "none",
+                    display: "block",
+                    marginBottom: otpError ? 8 : 16,
+                    boxSizing: "border-box",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "rgba(255,255,255,0.25)";
+                    e.target.style.background = "rgba(255,255,255,0.08)";
+                  }}
+                  onBlur={(e) => {
+                    if (!e.target.value) {
+                      e.target.style.borderColor = "rgba(255,255,255,0.1)";
+                      e.target.style.background = "rgba(255,255,255,0.05)";
+                    }
+                  }}
+                />
+                {otpError && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#ff453a",
+                      marginBottom: 12,
+                      paddingLeft: 4,
+                    }}
+                  >
+                    {otpError}
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    width: "100%",
+                    background: loading ? "rgba(255,255,255,0.1)" : "#fff",
+                    color: loading ? "rgba(255,255,255,0.4)" : "#000",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    border: "none",
+                    padding: 16,
+                    borderRadius: 16,
+                    fontFamily: "inherit",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    cursor: loading ? "not-allowed" : "pointer",
+                    boxSizing: "border-box",
+                    marginBottom: 12,
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <LoadingSpinner />
+                      Verifying…
+                    </>
+                  ) : (
+                    "Verify"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={loading}
+                  style={{
+                    width: "100%",
+                    background: "none",
+                    border: "none",
+                    color: loading ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.55)",
+                    fontSize: 14,
+                    fontWeight: 500,
+                    fontFamily: "inherit",
+                    cursor: loading ? "not-allowed" : "pointer",
+                    padding: "8px 0",
+                    textAlign: "center",
+                  }}
+                >
+                  Resend code
+                </button>
+              </form>
+            </div>
+          </>
         ) : (
+          /* ── Step 1: Email entry ── */
           <>
             <div
               style={{
@@ -193,7 +408,7 @@ export default function SignInPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+              <form onSubmit={handleEmailSubmit} style={{ width: "100%" }}>
                 <div
                   style={{
                     fontSize: 12,
@@ -226,7 +441,7 @@ export default function SignInPage() {
                     fontFamily: "inherit",
                     outline: "none",
                     display: "block",
-                    marginBottom: error ? 8 : 16,
+                    marginBottom: emailError ? 8 : 16,
                     boxSizing: "border-box",
                   }}
                   onFocus={(e) => {
@@ -240,7 +455,7 @@ export default function SignInPage() {
                     }
                   }}
                 />
-                {error && (
+                {emailError && (
                   <div
                     style={{
                       fontSize: 12,
@@ -249,7 +464,7 @@ export default function SignInPage() {
                       paddingLeft: 4,
                     }}
                   >
-                    {error}
+                    {emailError}
                   </div>
                 )}
                 <button
@@ -276,7 +491,7 @@ export default function SignInPage() {
                   {loading ? (
                     <>
                       <LoadingSpinner />
-                      Sending link…
+                      Sending…
                     </>
                   ) : (
                     <>
@@ -309,166 +524,12 @@ export default function SignInPage() {
             >
               By continuing you agree to our Terms.
               <br />
-              We&apos;ll email you a magic link — no passwords.
+              We&apos;ll email you a one-time code — no passwords.
             </p>
           </>
         )}
       </div>
     </div>
-  );
-}
-
-function MagicLinkSent({
-  email,
-  onResend,
-  loading,
-}: {
-  email: string;
-  onResend: () => void;
-  loading: boolean;
-}) {
-  return (
-    <>
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          textAlign: "center",
-          gap: 28,
-        }}
-      >
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: 28,
-            background: "rgba(255,255,255,0.05)",
-            border: "0.5px solid rgba(255,255,255,0.1)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "50%",
-              background: "linear-gradient(180deg, rgba(255,255,255,0.08), transparent)",
-            }}
-          />
-          <svg
-            width="36"
-            height="36"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <path d="M3 7l9 6 9-6" />
-          </svg>
-        </div>
-
-        <div>
-          <h1
-            style={{
-              fontSize: 28,
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.1,
-              marginBottom: 12,
-              color: "#fff",
-            }}
-          >
-            Check your inbox
-          </h1>
-          <p
-            style={{
-              fontSize: 15,
-              color: "rgba(255,255,255,0.55)",
-              lineHeight: 1.6,
-              margin: 0,
-            }}
-          >
-            We sent a magic link to
-            <br />
-            <span style={{ color: "#fff", fontWeight: 500 }}>{email}</span>
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "10px 16px",
-            background: "rgba(255,255,255,0.08)",
-            border: "0.5px solid rgba(255,255,255,0.1)",
-            borderRadius: 999,
-            fontSize: 13,
-            color: "rgba(255,255,255,0.55)",
-          }}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 6v6l4 2" />
-          </svg>
-          Link expires in 15 minutes
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <button
-          onClick={onResend}
-          disabled={loading}
-          style={{
-            width: "100%",
-            background: "rgba(255,255,255,0.08)",
-            border: "0.5px solid rgba(255,255,255,0.1)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
-            color: "#fff",
-            fontSize: 16,
-            fontWeight: 600,
-            padding: 16,
-            borderRadius: 16,
-            fontFamily: "inherit",
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.6 : 1,
-            boxSizing: "border-box",
-          }}
-        >
-          {loading ? "Sending…" : "Resend link"}
-        </button>
-        <p
-          style={{
-            fontSize: 12,
-            color: "rgba(255,255,255,0.4)",
-            textAlign: "center",
-            margin: 0,
-          }}
-        >
-          Didn&apos;t get it? Check your spam folder.
-        </p>
-      </div>
-    </>
   );
 }
 
