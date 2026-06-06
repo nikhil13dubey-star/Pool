@@ -31,8 +31,10 @@ export function splitExpense(
   if (method === "EXACT") {
     if (!exactAmounts) throw new Error("exactAmounts required for EXACT split");
 
-    const sum = Object.values(exactAmounts).reduce(
-      (acc, v) => acc.plus(new Decimal(v)),
+    // Sum over PARTICIPANTS only (not raw input keys) so debt can't silently leak
+    // when exactAmounts contains keys that aren't participants.
+    const sum = participants.reduce(
+      (acc, userId) => acc.plus(new Decimal(exactAmounts[userId] ?? 0)),
       new Decimal(0),
     );
 

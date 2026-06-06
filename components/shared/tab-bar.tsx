@@ -2,57 +2,86 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/client/utils";
-import {
-  HomeIcon,
-  UsersIcon,
-  CheckCircleIcon,
-  UserIcon,
-} from "@/components/shared/icons";
 
 const tabs = [
-  { href: "/", label: "Home", icon: HomeIcon },
-  { href: "/friends", label: "Friends", icon: UsersIcon },
-  { href: "/settle", label: "Settle", icon: CheckCircleIcon },
-  { href: "/profile", label: "Profile", icon: UserIcon },
+  {
+    href: "/",
+    label: "Home",
+    icon: (on: boolean) =>
+      on ? (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3 4 9v11a1 1 0 0 0 1 1h4v-7h6v7h4a1 1 0 0 0 1-1V9z" />
+        </svg>
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        </svg>
+      ),
+  },
+  {
+    href: "/activity",
+    label: "Activity",
+    icon: () => (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+  },
+  {
+    href: "/settle",
+    label: "Settle",
+    icon: () => (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M7 7h11l-3-3M17 17H6l3 3" />
+      </svg>
+    ),
+  },
+  {
+    href: "/profile",
+    label: "Profile",
+    icon: () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21c0-4 4-6 8-6s8 2 8 6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ];
 
 export function TabBar() {
   const pathname = usePathname();
-
   return (
-    <div className="fixed bottom-[18px] left-1/2 -translate-x-1/2 z-50">
-      <div
-        className="flex gap-1 p-1.5 rounded-[32px]"
-        style={{
-          background: "rgba(20, 20, 25, 0.6)",
-          backdropFilter: "blur(50px) saturate(220%)",
-          WebkitBackdropFilter: "blur(50px) saturate(220%)",
-          border: "0.5px solid rgba(255,255,255,0.1)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.4)",
-        }}
-      >
-        {tabs.map(({ href, label, icon: Icon }) => {
-          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
-
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-label={label}
-              className={cn(
-                "w-[52px] h-11 rounded-[24px] flex items-center justify-center pool-press",
-                "transition-colors duration-200",
-                isActive
-                  ? "text-white bg-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
-                  : "text-white/55 hover:text-white/80",
-              )}
-            >
-              <Icon size={20} filled={isActive} />
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+    <nav className="tabbar">
+      {tabs.map((t) => {
+        const on = t.href === "/" ? pathname === "/" : pathname.startsWith(t.href);
+        return (
+          <Link key={t.href} href={t.href} className={`tab${on ? " on" : ""}`}>
+            {t.icon(on)}
+            {t.label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
