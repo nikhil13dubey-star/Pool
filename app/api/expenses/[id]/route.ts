@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/server/db";
+import { getCurrentUser } from "@/lib/server/current-user";
 import { splitExpense } from "@/lib/server/splits";
 import { emitNotification } from "@/lib/server/notifications";
 
-async function requireGroupMember(expenseId: string, userId: string) {
+async function loadAllowed(expenseId: string, userId: string) {
   const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
   if (!expense) return null;
-  const member = await prisma.groupMember.findUnique({
+  const m = await prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId: expense.groupId, userId } },
   });
-  return member?.isActive ? expense : null;
+  return m?.isActive ? expense : null;
 }
 
 export async function GET(
@@ -18,27 +18,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const expense = await requireGroupMember(id, session.user.id);
-  if (!expense) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await loadAllowed(id, user.id)))
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const full = await prisma.expense.findUnique({
     where: { id },
-    include: {
-      paidBy: true,
-      createdBy: true,
-      shares: { include: { user: true } },
-      comments: {
-        where: { isDeleted: false },
-        include: { user: true },
-        orderBy: { createdAt: "asc" },
-      },
-    },
+    include: { paidBy: true, createdBy: true, shares: { include: { user: true } } },
   });
-
   return NextResponse.json(full);
 }
 
@@ -47,64 +35,64 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const existing = await loadAllowed(id, user.id);
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const expense = await requireGroupMember(id, session.user.id);
-  if (!expense) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const b = await req.json().catch(() => null);
+  const description = (b?.description ?? "").trim();
+  const amount = Number(b?.amount);
+  const paidById = b?.paidById;
+  const splitMethod = b?.splitMethod === "EXACT" ? "EXACT" : "EQUAL";
+  const participants: string[] = Array.isArray(b?.participants) ? b.participants : [];
+  const exactAmounts = b?.exactAmounts;
+  if (!description || !(amount > 0) || !paidById || participants.length === 0)
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-  const body = await req.json();
+  const members = await prisma.groupMember.findMany({
+    where: { groupId: existing.groupId, isActive: true },
+    select: { userId: true },
+  });
+  const memberIds = new Set(members.map((m) => m.userId));
+  if (!memberIds.has(paidById) || !participants.every((p) => memberIds.has(p)))
+    return NextResponse.json(
+      { error: "Payer and participants must be group members" },
+      { status: 400 },
+    );
 
-  const updated = await prisma.$transaction(async (tx) => {
-    const updated = await tx.expense.update({
+  let splits;
+  try {
+    splits = splitExpense(amount, splitMethod, participants, exactAmounts);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.expense.update({
       where: { id },
       data: {
-        ...(body.description !== undefined && { description: body.description }),
-        ...(body.amount !== undefined && { amount: body.amount }),
-        ...(body.paidById !== undefined && { paidById: body.paidById }),
-        ...(body.category !== undefined && { category: body.category }),
-        ...(body.notes !== undefined && { notes: body.notes }),
-        ...(body.expenseDate !== undefined && {
-          expenseDate: new Date(body.expenseDate),
-        }),
-        ...(body.splitMethod !== undefined && { splitMethod: body.splitMethod }),
+        description,
+        amount,
+        paidById,
+        splitMethod,
+        category: b?.category ?? existing.category,
+        notes: (b?.notes ?? "").trim() || null,
+        expenseDate: b?.expenseDate ? new Date(b.expenseDate) : existing.expenseDate,
       },
     });
-
-    // Recompute shares if split data provided
-    if (body.participants && body.splitMethod) {
-      const splits = splitExpense(
-        body.amount ?? Number(expense.amount),
-        body.splitMethod,
-        body.participants,
-        body.exactAmounts,
-      );
-      await tx.expenseShare.deleteMany({ where: { expenseId: id } });
-      await tx.expenseShare.createMany({
-        data: splits.map((s) => ({
-          expenseId: id,
-          userId: s.userId,
-          amountOwed: s.amountOwed,
-          shareValue: s.shareValue,
-        })),
-      });
-    }
-
-    return updated;
+    await tx.expenseShare.deleteMany({ where: { expenseId: id } });
+    await tx.expenseShare.createMany({
+      data: splits.map((s) => ({
+        expenseId: id,
+        userId: s.userId,
+        amountOwed: s.amountOwed,
+        shareValue: s.shareValue,
+      })),
+    });
   });
 
-  // Notify
-  const members = await prisma.groupMember.findMany({
-    where: { groupId: expense.groupId, isActive: true, userId: { not: session.user.id } },
-  });
-  await emitNotification(
-    members.map((m) => m.userId),
-    "EXPENSE_EDITED",
-    { expenseId: id, groupId: expense.groupId },
-  );
-
-  return NextResponse.json(updated);
+  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
@@ -112,26 +100,26 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const expense = await requireGroupMember(id, session.user.id);
-  if (!expense) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const existing = await loadAllowed(id, user.id);
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.expense.update({
     where: { id },
     data: { isDeleted: true, deletedAt: new Date() },
   });
-
-  const members = await prisma.groupMember.findMany({
-    where: { groupId: expense.groupId, isActive: true, userId: { not: session.user.id } },
+  const others = await prisma.groupMember.findMany({
+    where: { groupId: existing.groupId, isActive: true, userId: { not: user.id } },
   });
   await emitNotification(
-    members.map((m) => m.userId),
+    others.map((m) => m.userId),
     "EXPENSE_DELETED",
-    { expenseId: id, groupId: expense.groupId },
+    {
+      groupId: existing.groupId,
+      description: existing.description,
+      actor: user.displayName,
+    },
   );
-
   return NextResponse.json({ ok: true });
 }

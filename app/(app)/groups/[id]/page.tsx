@@ -1,45 +1,100 @@
 import { notFound } from "next/navigation";
-import { getCurrentUser } from "@/lib/server/auth-helpers";
+import { getCurrentUser } from "@/lib/server/current-user";
 import { prisma } from "@/lib/server/db";
 import { computeBalancesFromData } from "@/lib/server/balances";
 import { GroupDetailClient } from "@/components/groups/group-detail-client";
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
-
-export default async function GroupPage({ params }: Props) {
+export default async function GroupPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const user = (await getCurrentUser())!;
 
-  // All three fetches run in parallel — saves ~800ms vs sequential
-  const [user, group, settlements] = await Promise.all([
-    getCurrentUser(),
-    prisma.group.findUnique({
-      where: { id, isDeleted: false },
-      include: {
-        members: {
-          where: { isActive: true },
-          include: { user: true },
-          orderBy: { joinedAt: "asc" },
-        },
-        expenses: {
-          where: { isDeleted: false },
-          include: { paidBy: true, shares: { include: { user: true } } },
-          orderBy: { expenseDate: "desc" },
-          take: 30,
-        },
-      },
-    }),
-    prisma.settlement.findMany({ where: { groupId: id } }),
-  ]);
-
+  const group = await prisma.group.findFirst({
+    where: { id, isDeleted: false },
+    include: { members: { where: { isActive: true }, include: { user: true } } },
+  });
   if (!group) notFound();
+  if (!group.members.some((m) => m.userId === user.id)) notFound();
 
-  const isMember = group.members.some((m) => m.userId === user.id);
-  if (!isMember) notFound();
+  const [expenses, settlements] = await Promise.all([
+    prisma.expense.findMany({
+      where: { groupId: id, isDeleted: false },
+      include: { paidBy: true, shares: true },
+      orderBy: [{ expenseDate: "desc" }, { createdAt: "desc" }],
+    }),
+    prisma.settlement.findMany({
+      where: { groupId: id },
+      select: { fromUserId: true, toUserId: true, amount: true },
+    }),
+  ]);
+  const balances = computeBalancesFromData(expenses, settlements);
 
-  // Compute balances from already-fetched data — zero extra DB queries
-  const balances = computeBalancesFromData(group.expenses, settlements);
+  const userMap = Object.fromEntries(group.members.map((m) => [m.userId, m.user]));
+  const myBal = balances.find((b) => b.userId === user.id);
+  const myNet = myBal?.net ?? 0;
 
-  return <GroupDetailClient group={group} currentUser={user} balances={balances} />;
+  // who owes whom, from my perspective
+  const lines: {
+    userId: string;
+    name: string;
+    hue: string;
+    amount: number;
+    dir: "owed" | "owe";
+  }[] = [];
+  if (myBal) {
+    for (const [uid, amt] of Object.entries(myBal.isOwed))
+      lines.push({
+        userId: uid,
+        name: userMap[uid]?.displayName ?? "?",
+        hue: userMap[uid]?.avatarColor ?? "0",
+        amount: amt,
+        dir: "owed",
+      });
+    for (const [uid, amt] of Object.entries(myBal.owes))
+      lines.push({
+        userId: uid,
+        name: userMap[uid]?.displayName ?? "?",
+        hue: userMap[uid]?.avatarColor ?? "0",
+        amount: amt,
+        dir: "owe",
+      });
+  }
+
+  const expenseData = expenses.map((e) => {
+    const mine = e.shares.find((s) => s.userId === user.id);
+    const myShare = mine ? Number(mine.amountOwed) : 0;
+    const iPaid = e.paidById === user.id;
+    const lentToOthers = iPaid
+      ? e.shares
+          .filter((s) => s.userId !== user.id)
+          .reduce((s, sh) => s + Number(sh.amountOwed), 0)
+      : 0;
+    return {
+      id: e.id,
+      description: e.description,
+      amount: Number(e.amount),
+      category: e.category,
+      paidByName: e.paidBy.id === user.id ? "You" : e.paidBy.displayName,
+      date: e.expenseDate.toISOString().slice(0, 10),
+      impact: iPaid ? lentToOthers : -myShare, // + you lent, - you owe
+    };
+  });
+
+  const data = {
+    id: group.id,
+    name: group.name,
+    type: group.type,
+    members: group.members.map((m) => ({
+      id: m.id,
+      userId: m.userId,
+      user: {
+        displayName: m.user.displayName,
+        avatarColor: m.user.avatarColor,
+        isGhost: m.user.isGhost,
+      },
+    })),
+  };
+
+  return (
+    <GroupDetailClient group={data} myNet={myNet} lines={lines} expenses={expenseData} />
+  );
 }

@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/server/db";
-import { CreateGroupSchema } from "@/lib/shared/zod-schemas";
+import { getCurrentUser } from "@/lib/server/current-user";
+
+const TYPES = ["TRIP", "HOME", "COUPLE", "OTHER"] as const;
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const userId = session.user.id;
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const memberships = await prisma.groupMember.findMany({
-    where: { userId, isActive: true, group: { isDeleted: false } },
+    where: { userId: user.id, isActive: true, group: { isDeleted: false } },
     include: {
       group: {
         include: {
           members: { where: { isActive: true }, include: { user: true } },
+          _count: { select: { expenses: { where: { isDeleted: false } } } },
         },
       },
     },
@@ -25,29 +25,23 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const userId = session.user.id;
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const parsed = CreateGroupSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
-
-  const { name, type, defaultCurrency } = parsed.data;
+  const body = await req.json().catch(() => null);
+  const name = (body?.name ?? "").trim();
+  const type = body?.type;
+  if (!name || name.length > 40)
+    return NextResponse.json({ error: "Enter a group name" }, { status: 400 });
+  if (!TYPES.includes(type))
+    return NextResponse.json({ error: "Invalid type" }, { status: 400 });
 
   const group = await prisma.$transaction(async (tx) => {
-    const created = await tx.group.create({
-      data: { name, type, defaultCurrency, createdById: userId },
-    });
-
+    const g = await tx.group.create({ data: { name, type, createdById: user.id } });
     await tx.groupMember.create({
-      data: { groupId: created.id, userId, role: "MEMBER" },
+      data: { groupId: g.id, userId: user.id, role: "MEMBER" },
     });
-
-    return created;
+    return g;
   });
 
   return NextResponse.json(group, { status: 201 });

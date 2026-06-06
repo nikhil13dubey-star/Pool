@@ -1,11 +1,11 @@
 {
   "name": "Pool — Split expenses",
   "short_name": "Pool",
-  "description": "Split expenses with friends. Settle via UPI.",
+  "description": "Split expenses with friends. Settle up. No ads, no limits.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#0a0a0b",
+  "theme_color": "#0a0a0b",
   "orientation": "portrait",
   "icons": [
     {

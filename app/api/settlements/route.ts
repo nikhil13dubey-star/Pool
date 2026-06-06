@@ -1,27 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/server/db";
-import { CreateSettlementSchema } from "@/lib/shared/zod-schemas";
+import { getCurrentUser } from "@/lib/server/current-user";
 import { emitNotification } from "@/lib/server/notifications";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const parsed = CreateSettlementSchema.safeParse(body);
-  if (!parsed.success)
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  const b = await req.json().catch(() => null);
+  const groupId = b?.groupId;
+  const otherId = b?.otherId;
+  const dir = b?.dir; // "pay" => me -> other ; "receive" => other -> me
+  const amount = Number(b?.amount);
+  if (!groupId || !otherId || !(amount > 0) || (dir !== "pay" && dir !== "receive"))
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-  const { groupId, fromUserId, toUserId, amount, currency, method, note, settledAt } =
-    parsed.data;
-
-  const member = await prisma.groupMember.findUnique({
-    where: { groupId_userId: { groupId, userId: session.user.id } },
-  });
+  const [member, other] = await Promise.all([
+    prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId: user.id } },
+    }),
+    prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId: otherId } },
+    }),
+  ]);
   if (!member?.isActive)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!other?.isActive)
+    return NextResponse.json(
+      { error: "Other party isn't in this group" },
+      { status: 400 },
+    );
+
+  const fromUserId = dir === "pay" ? user.id : otherId;
+  const toUserId = dir === "pay" ? otherId : user.id;
 
   const settlement = await prisma.settlement.create({
     data: {
@@ -29,20 +40,14 @@ export async function POST(req: NextRequest) {
       fromUserId,
       toUserId,
       amount,
-      currency,
-      method,
-      note,
-      settledAt: settledAt ? new Date(settledAt) : new Date(),
+      method: "OTHER",
+      settledAt: new Date(),
     },
   });
-
-  await emitNotification([toUserId], "SETTLEMENT_RECORDED", {
-    settlementId: settlement.id,
+  await emitNotification([otherId], "SETTLEMENT_RECORDED", {
     groupId,
-    fromUserId,
     amount,
-    method,
+    actor: user.displayName,
   });
-
   return NextResponse.json(settlement, { status: 201 });
 }

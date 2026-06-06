@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/server/db";
+import { getCurrentUser } from "@/lib/server/current-user";
 
-async function requireMembership(groupId: string, userId: string) {
-  const member = await prisma.groupMember.findUnique({
+async function isMember(groupId: string, userId: string) {
+  const m = await prisma.groupMember.findUnique({
     where: { groupId_userId: { groupId, userId } },
   });
-  return member?.isActive ?? false;
+  return m?.isActive ?? false;
 }
 
 export async function GET(
@@ -14,21 +14,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  if (!(await requireMembership(id, session.user.id))) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isMember(id, user.id)))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
-  const group = await prisma.group.findUnique({
+  const group = await prisma.group.findFirst({
     where: { id, isDeleted: false },
-    include: {
-      members: { where: { isActive: true }, include: { user: true } },
-    },
+    include: { members: { where: { isActive: true }, include: { user: true } } },
   });
-
   if (!group) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(group);
 }
@@ -38,23 +32,18 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  if (!(await requireMembership(id, session.user.id))) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isMember(id, user.id)))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
-  const body = await req.json();
-  const group = await prisma.group.update({
-    where: { id },
-    data: {
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.simplifyDebts !== undefined && { simplifyDebts: body.simplifyDebts }),
-    },
-  });
+  const body = await req.json().catch(() => null);
+  const data: { name?: string; simplifyDebts?: boolean } = {};
+  if (typeof body?.name === "string" && body.name.trim())
+    data.name = body.name.trim().slice(0, 40);
+  if (typeof body?.simplifyDebts === "boolean") data.simplifyDebts = body.simplifyDebts;
 
+  const group = await prisma.group.update({ where: { id }, data });
   return NextResponse.json(group);
 }
 
@@ -63,14 +52,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const group = await prisma.group.findUnique({ where: { id } });
-  if (!group || group.createdById !== session.user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  if (!group) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (group.createdById !== user.id)
+    return NextResponse.json({ error: "Only the creator can delete" }, { status: 403 });
 
   await prisma.group.update({ where: { id }, data: { isDeleted: true } });
   return NextResponse.json({ ok: true });

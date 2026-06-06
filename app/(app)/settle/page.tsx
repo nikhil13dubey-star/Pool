@@ -1,81 +1,92 @@
-import { getCurrentUser } from "@/lib/server/auth-helpers";
+import { getCurrentUser } from "@/lib/server/current-user";
 import { prisma } from "@/lib/server/db";
 import { computeBalancesFromData } from "@/lib/server/balances";
 import { simplifyDebts } from "@/lib/server/simplify";
 import { SettleClient } from "@/components/settle/settle-client";
 
 export default async function SettlePage() {
-  const user = await getCurrentUser();
-
+  const user = (await getCurrentUser())!;
   const memberships = await prisma.groupMember.findMany({
     where: { userId: user.id, isActive: true, group: { isDeleted: false } },
-    select: { groupId: true, group: { select: { id: true, name: true } } },
+    include: {
+      group: {
+        include: { members: { where: { isActive: true }, include: { user: true } } },
+      },
+    },
   });
-
   const groupIds = memberships.map((m) => m.groupId);
 
-  if (groupIds.length === 0) {
-    return <SettleClient currentUser={user} settlements={[]} userMap={{}} />;
-  }
-
-  // 2 DB queries total regardless of group count
-  const [expenses, settlements] = await Promise.all([
+  // Batched: all expenses + settlements + history in parallel (was 2×N sequential).
+  const [allExpenses, allSettlements, history] = await Promise.all([
     prisma.expense.findMany({
       where: { groupId: { in: groupIds }, isDeleted: false },
-      include: { shares: true },
+      select: {
+        groupId: true,
+        paidById: true,
+        shares: { select: { userId: true, amountOwed: true } },
+      },
     }),
-    prisma.settlement.findMany({ where: { groupId: { in: groupIds } } }),
+    prisma.settlement.findMany({
+      where: { groupId: { in: groupIds } },
+      select: { groupId: true, fromUserId: true, toUserId: true, amount: true },
+    }),
+    prisma.settlement.findMany({
+      where: {
+        groupId: { in: groupIds },
+        OR: [{ fromUserId: user.id }, { toUserId: user.id }],
+      },
+      include: { fromUser: true, toUser: true, group: true },
+      orderBy: { settledAt: "desc" },
+      take: 10,
+    }),
   ]);
 
-  const groupNameMap = Object.fromEntries(
-    memberships.map((m) => [m.groupId, m.group.name]),
-  );
-
-  const settlementsNeeded: {
+  const suggestions: {
     groupId: string;
     groupName: string;
-    transfers: { fromUserId: string; toUserId: string; amount: number }[];
+    otherId: string;
+    otherName: string;
+    otherHue: string;
+    amount: number;
+    dir: "receive" | "pay";
   }[] = [];
+  let net = 0;
 
-  for (const groupId of groupIds) {
-    const groupExpenses = expenses.filter((e) => e.groupId === groupId);
-    const groupSettlements = settlements.filter((s) => s.groupId === groupId);
-    const balances = computeBalancesFromData(groupExpenses, groupSettlements);
-
-    const rawBalances: Record<string, number> = {};
-    for (const b of balances) rawBalances[b.userId] = b.net;
-
-    const transfers = simplifyDebts(rawBalances).filter(
+  for (const m of memberships) {
+    const g = m.group;
+    const userMap = Object.fromEntries(g.members.map((x) => [x.userId, x.user]));
+    const exp = allExpenses.filter((e) => e.groupId === g.id);
+    const set = allSettlements.filter((s) => s.groupId === g.id);
+    const balances = computeBalancesFromData(exp, set);
+    const raw: Record<string, number> = {};
+    for (const b of balances) raw[b.userId] = b.net;
+    net += raw[user.id] ?? 0;
+    const transfers = simplifyDebts(raw).filter(
       (t) => t.fromUserId === user.id || t.toUserId === user.id,
     );
-
-    if (transfers.length > 0) {
-      settlementsNeeded.push({
-        groupId,
-        groupName: groupNameMap[groupId] ?? groupId,
-        transfers,
+    for (const t of transfers) {
+      const receive = t.toUserId === user.id;
+      const otherId = receive ? t.fromUserId : t.toUserId;
+      suggestions.push({
+        groupId: g.id,
+        groupName: g.name,
+        otherId,
+        otherName: userMap[otherId]?.displayName ?? "?",
+        otherHue: userMap[otherId]?.avatarColor ?? "0",
+        amount: t.amount,
+        dir: receive ? "receive" : "pay",
       });
     }
   }
+  const historyData = history.map((s) => ({
+    id: s.id,
+    amount: Number(s.amount),
+    groupName: s.group.name,
+    text:
+      s.toUserId === user.id
+        ? `${s.fromUser.displayName} paid you`
+        : `You paid ${s.toUser.displayName}`,
+  }));
 
-  const userIds = new Set<string>();
-  for (const s of settlementsNeeded) {
-    for (const t of s.transfers) {
-      userIds.add(t.fromUserId);
-      userIds.add(t.toUserId);
-    }
-  }
-
-  const users = userIds.size
-    ? await prisma.user.findMany({
-        where: { id: { in: [...userIds] } },
-        select: { id: true, displayName: true, avatarColor: true, upiId: true },
-      })
-    : [];
-
-  const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
-
-  return (
-    <SettleClient currentUser={user} settlements={settlementsNeeded} userMap={userMap} />
-  );
+  return <SettleClient net={net} suggestions={suggestions} history={historyData} />;
 }

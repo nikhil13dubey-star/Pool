@@ -1,52 +1,24 @@
 export default function HomeLoading() {
   return (
-    <div style={{ minHeight: "100vh", paddingBottom: 100 }}>
-      {/* Header skeleton */}
+    <div style={{ padding: "20px 22px 130px" }}>
       <div
-        style={{
-          padding: "24px 24px 16px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
       >
-        <div>
-          <div
-            className="skeleton"
-            style={{ height: 12, width: 80, marginBottom: 8, borderRadius: 6 }}
-          />
-          <div className="skeleton" style={{ height: 28, width: 120, borderRadius: 8 }} />
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <div
-            className="skeleton"
-            style={{ width: 38, height: 38, borderRadius: 999 }}
-          />
-          <div
-            className="skeleton"
-            style={{ width: 38, height: 38, borderRadius: 999 }}
-          />
-        </div>
+        <div className="skel" style={{ width: 30, height: 30, borderRadius: 8 }} />
+        <div className="skel" style={{ width: 38, height: 38, borderRadius: "50%" }} />
       </div>
-
-      {/* Balance hero skeleton */}
-      <div style={{ padding: "8px 24px 24px" }}>
-        <div className="skeleton" style={{ height: 96, borderRadius: 20 }} />
-      </div>
-
-      {/* Group list skeleton */}
-      <div style={{ padding: "0 24px" }}>
-        <div
-          className="skeleton"
-          style={{ height: 14, width: 60, marginBottom: 12, borderRadius: 6 }}
-        />
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="skeleton"
-            style={{ height: 72, borderRadius: 16, marginBottom: 10 }}
-          />
-        ))}
+      <div
+        className="skel"
+        style={{ width: 180, height: 34, marginTop: 22, borderRadius: 10 }}
+      />
+      <div className="skel" style={{ height: 150, marginTop: 18, borderRadius: 24 }} />
+      <div
+        className="skel"
+        style={{ width: 100, height: 22, margin: "28px 4px 14px", borderRadius: 8 }}
+      />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div className="skel" style={{ aspectRatio: "1/1", borderRadius: 22 }} />
+        <div className="skel" style={{ aspectRatio: "1/1", borderRadius: 22 }} />
       </div>
     </div>
   );
