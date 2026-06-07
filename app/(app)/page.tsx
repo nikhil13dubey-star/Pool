@@ -48,8 +48,8 @@ export default async function HomePage() {
         <img
           src="/logo-mark.png"
           alt="Pool"
-          height={30}
-          style={{ height: 30, width: "auto" }}
+          height={40}
+          style={{ height: 40, width: "auto" }}
         />
         <ProfileButton />
       </div>

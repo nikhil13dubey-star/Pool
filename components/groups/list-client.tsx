@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
 
 interface ListItem {
   id: string;
@@ -48,6 +49,7 @@ export function ListClient({
   const [text, setText] = useState("");
   const [adding, setAdding] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ListItem | null>(null);
 
   async function add() {
     const value = text.trim();
@@ -251,7 +253,7 @@ export function ListClient({
                 </div>
               </div>
               <button
-                onClick={() => remove(item.id)}
+                onClick={() => setPendingDelete(item)}
                 aria-label="Remove item"
                 style={{
                   flexShrink: 0,
@@ -281,6 +283,22 @@ export function ListClient({
           ))}
         </div>
       )}
+
+      <ConfirmSheet
+        open={!!pendingDelete}
+        title="Remove from list?"
+        message={
+          pendingDelete
+            ? `“${pendingDelete.text}” will be removed for everyone in the group.`
+            : undefined
+        }
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (pendingDelete) remove(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

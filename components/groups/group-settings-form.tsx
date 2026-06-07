@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ModalSheet } from "@/components/ui/modal-sheet";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
 import { Loader } from "@/components/ui/loader";
 
 export function GroupSettingsForm({ groupId }: { groupId: string }) {
@@ -13,6 +14,9 @@ export function GroupSettingsForm({ groupId }: { groupId: string }) {
   const [meId, setMeId] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmKind, setConfirmKind] = useState<"delete" | "leave" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [actionErr, setActionErr] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -38,16 +42,22 @@ export function GroupSettingsForm({ groupId }: { groupId: string }) {
   }
 
   async function del() {
-    if (!confirm("Delete this group? This can't be undone.")) return;
+    setBusy(true);
     await fetch(`/api/groups/${groupId}`, { method: "DELETE" });
     router.replace("/");
   }
 
   async function leave() {
-    if (!confirm("Leave this group?")) return;
+    setBusy(true);
+    setActionErr(null);
     const res = await fetch(`/api/groups/${groupId}/members`, { method: "DELETE" });
-    if (res.ok) router.replace("/");
-    else alert((await res.json().catch(() => ({})))?.error ?? "Couldn't leave.");
+    if (res.ok) {
+      router.replace("/");
+    } else {
+      setActionErr((await res.json().catch(() => ({})))?.error ?? "Couldn't leave.");
+      setBusy(false);
+      setConfirmKind(null);
+    }
   }
 
   return (
@@ -95,7 +105,7 @@ export function GroupSettingsForm({ groupId }: { groupId: string }) {
                 </svg>
               </Link>
               <button
-                onClick={leave}
+                onClick={() => setConfirmKind("leave")}
                 className="row"
                 style={{
                   width: "100%",
@@ -109,10 +119,15 @@ export function GroupSettingsForm({ groupId }: { groupId: string }) {
                 <span style={{ flex: 1 }}>Leave group</span>
               </button>
             </div>
+            {actionErr && (
+              <p style={{ fontSize: 13, color: "var(--neg)", marginTop: 10 }}>
+                {actionErr}
+              </p>
+            )}
 
             <div style={{ marginTop: 24 }}>
               <button
-                onClick={del}
+                onClick={() => setConfirmKind("delete")}
                 className="btn"
                 style={{ background: "rgba(255,90,70,0.12)", color: "#ff6b54" }}
                 disabled={createdById !== meId}
@@ -135,6 +150,20 @@ export function GroupSettingsForm({ groupId }: { groupId: string }) {
           </>
         )}
       </div>
+
+      <ConfirmSheet
+        open={confirmKind !== null}
+        title={confirmKind === "delete" ? "Delete this group?" : "Leave this group?"}
+        message={
+          confirmKind === "delete"
+            ? "The group and all its expenses will be removed for everyone. This can’t be undone."
+            : "You’ll be removed from this group. You can be added back later."
+        }
+        confirmLabel={confirmKind === "delete" ? "Delete" : "Leave"}
+        loading={busy}
+        onConfirm={confirmKind === "delete" ? del : leave}
+        onCancel={() => setConfirmKind(null)}
+      />
     </ModalSheet>
   );
 }

@@ -1,27 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
-const MESSAGES = [
-  "Splitting the bill…",
-  "Doing the math…",
-  "Tallying it up…",
-  "Counting the chai ☕",
-  "Balancing the books…",
-  "Settling the score…",
-  "Crunching receipts…",
-  "Who owes who…",
-];
+export function Loader({
+  compact,
+  icon,
+  label,
+}: {
+  compact?: boolean;
+  icon?: ReactNode;
+  label?: string;
+}) {
+  const wrapStyle = compact ? { minHeight: 160 } : undefined;
 
-export function Loader({ compact }: { compact?: boolean }) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setI((p) => (p + 1) % MESSAGES.length), 1800);
-    return () => clearInterval(t);
-  }, []);
+  if (icon) {
+    return (
+      <div className="loader-wrap" style={wrapStyle}>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 38,
+            height: 38,
+            color: "var(--accent)",
+            filter: "drop-shadow(0 0 10px var(--brand-glow))",
+            transformOrigin: "center",
+            animation: "spin 1.1s linear infinite",
+          }}
+        >
+          {icon}
+        </span>
+        {label ? <div className="loader-label">{label}</div> : null}
+      </div>
+    );
+  }
 
   return (
-    <div className="loader-wrap" style={compact ? { minHeight: 160 } : undefined}>
+    <div className="loader-wrap" style={wrapStyle}>
       <div className="loader">
         <i />
         <i />
@@ -29,9 +45,7 @@ export function Loader({ compact }: { compact?: boolean }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-mark.png" alt="" className="loader-logo" />
       </div>
-      <div className="loader-label" key={i}>
-        {MESSAGES[i]}
-      </div>
+      <div className="loader-label">{label ?? "Loading…"}</div>
     </div>
   );
 }

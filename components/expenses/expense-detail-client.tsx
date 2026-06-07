@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/avatar";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
 import { categoryLabel } from "@/lib/shared/categories";
 
 interface Share {
@@ -42,6 +43,8 @@ export function ExpenseDetailClient({
   const [list, setList] = useState<Comment[]>(comments);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function addComment() {
     const body = text.trim();
@@ -61,7 +64,7 @@ export function ExpenseDetailClient({
   }
 
   async function del() {
-    if (!confirm("Delete this expense?")) return;
+    setDeleting(true);
     await fetch(`/api/expenses/${expense.id}`, { method: "DELETE" });
     router.back();
     router.refresh();
@@ -212,11 +215,21 @@ export function ExpenseDetailClient({
         <button
           className="btn"
           style={{ background: "rgba(255,90,70,0.12)", color: "#ff6b54" }}
-          onClick={del}
+          onClick={() => setConfirmDel(true)}
         >
           Delete expense
         </button>
       </div>
+
+      <ConfirmSheet
+        open={confirmDel}
+        title="Delete this expense?"
+        message={`“${expense.description}” will be removed for everyone. This can’t be undone.`}
+        confirmLabel="Delete"
+        loading={deleting}
+        onConfirm={del}
+        onCancel={() => setConfirmDel(false)}
+      />
     </div>
   );
 }
