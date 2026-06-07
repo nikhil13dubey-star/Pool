@@ -6,7 +6,7 @@ import { SignOutButton } from "@/components/ui/sign-out-button";
 export default async function ProfilePage() {
   const user = (await getCurrentUser())!;
   return (
-    <div style={{ minHeight: "100svh", padding: "24px 22px 130px" }}>
+    <div style={{ minHeight: "100svh", padding: "24px 18px 130px" }}>
       <div
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
       >

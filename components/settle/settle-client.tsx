@@ -59,13 +59,13 @@ export function SettleClient({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 22px 4px",
+          padding: "0 18px 4px",
         }}
       >
         <h1 className="lt">Settle up</h1>
         {profile}
       </div>
-      <div style={{ padding: "0 22px 18px" }}>
+      <div style={{ padding: "0 18px 18px" }}>
         <div className="cap">
           {net >= 0 ? "Across all groups, you're owed" : "Across all groups, you owe"}
         </div>
@@ -92,7 +92,7 @@ export function SettleClient({
         </div>
       ) : (
         <>
-          <div className="cap" style={{ padding: "0 22px 12px" }}>
+          <div className="cap" style={{ padding: "0 18px 12px" }}>
             Suggested — {suggestions.length} payment{suggestions.length > 1 ? "s" : ""}
           </div>
           <div
@@ -151,7 +151,7 @@ export function SettleClient({
 
       {history.length > 0 && (
         <>
-          <div className="cap" style={{ padding: "30px 22px 12px" }}>
+          <div className="cap" style={{ padding: "30px 18px 12px" }}>
             Recently settled
           </div>
           <div className="card" style={{ margin: "0 18px" }}>

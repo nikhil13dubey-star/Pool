@@ -75,7 +75,7 @@ export default async function ActivityPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 22px 18px",
+          padding: "0 18px 18px",
         }}
       >
         <h1 className="lt">Activity</h1>

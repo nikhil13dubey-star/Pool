@@ -287,7 +287,7 @@ export function GroupDetailClient({
           ) : (
             grouped.map((g) => (
               <div key={g.day}>
-                <div className="cap" style={{ padding: "16px 22px 8px" }}>
+                <div className="cap" style={{ padding: "16px 18px 8px" }}>
                   {dayLabel(g.day)}
                 </div>
                 <div className="card" style={{ margin: "0 18px" }}>

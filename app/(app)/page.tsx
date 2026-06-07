@@ -41,7 +41,7 @@ export default async function HomePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 22px",
+          padding: "0 18px",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -54,7 +54,7 @@ export default async function HomePage() {
         <ProfileButton />
       </div>
 
-      <h1 className="lt" style={{ padding: "16px 22px 14px" }}>
+      <h1 className="lt" style={{ padding: "16px 18px 14px" }}>
         Hey, {user.displayName.split(" ")[0]}
       </h1>
 
