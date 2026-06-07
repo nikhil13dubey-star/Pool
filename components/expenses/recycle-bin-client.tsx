@@ -14,7 +14,7 @@ interface Item {
 }
 const inr = (n: number) => Math.round(Math.abs(n)).toLocaleString("en-IN");
 
-export function RecycleBinClient({ groupId, items }: { groupId: string; items: Item[] }) {
+export function RecycleBinClient({ items }: { items: Item[] }) {
   const router = useRouter();
   const [list, setList] = useState(items);
   const [busy, setBusy] = useState<string | null>(null);

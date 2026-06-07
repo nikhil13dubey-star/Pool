@@ -30,5 +30,5 @@ export default async function RecycleBinPage({
     deletedAt: e.deletedAt?.toISOString() ?? "",
   }));
 
-  return <RecycleBinClient groupId={id} items={items} />;
+  return <RecycleBinClient items={items} />;
 }

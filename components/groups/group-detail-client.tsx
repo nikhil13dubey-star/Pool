@@ -274,6 +274,13 @@ export function GroupDetailClient({
             >
               View insights
             </Link>
+            <Link
+              href={`/groups/${group.id}/games`}
+              className="btn btn-ghost"
+              style={{ marginTop: 10 }}
+            >
+              🎲 Play trip games
+            </Link>
           </div>
         </>
       )}
