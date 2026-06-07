@@ -113,12 +113,8 @@ export default async function HomePage() {
                 ))}
               </div>
               <div className="nm">{g.name}</div>
-              <div className="gs">
-                {g.members.length} {g.members.length === 1 ? "person" : "people"} ·{" "}
-                {g._count.expenses} {g._count.expenses === 1 ? "expense" : "expenses"}
-              </div>
               <div className="lab">
-                {settled ? "settled" : bal > 0 ? "you're owed" : "you owe"}
+                {settled ? "settled up" : bal > 0 ? "you're owed" : "you owe"}
               </div>
               <div
                 className="val num"

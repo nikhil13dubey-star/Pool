@@ -57,6 +57,25 @@ const tabs = [
       </svg>
     ),
   },
+  {
+    href: "/play",
+    label: "Play",
+    icon: () => (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M17.5 5.5h-11A4.5 4.5 0 0 0 2 10v3.5A3.5 3.5 0 0 0 8.4 15.4l.3-.4h6.6l.3.4A3.5 3.5 0 0 0 22 13.5V10a4.5 4.5 0 0 0-4.5-4.5z" />
+        <path d="M6.5 11h3M8 9.5v3" />
+        <circle cx="15.5" cy="10.5" r="0.9" fill="currentColor" stroke="none" />
+        <circle cx="18" cy="13" r="0.9" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
 ];
 
 export function TabBar() {

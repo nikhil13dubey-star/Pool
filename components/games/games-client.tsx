@@ -200,15 +200,15 @@ export function GamesClient({ memberNames }: { memberNames: string[] }) {
     </div>
   );
 
-  // HOME
+  // HOME — normal page (keeps the tab bar visible); gameplay goes full-screen
   if (phase === "home")
-    return shell(
+    return (
       <div
         style={{
-          padding: "16px 18px",
+          padding: "16px 18px 130px",
           display: "flex",
           flexDirection: "column",
-          minHeight: "100%",
+          minHeight: "100svh",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6, minHeight: 44 }}>
@@ -248,7 +248,7 @@ export function GamesClient({ memberNames }: { memberNames: string[] }) {
             <div style={gSub}>Describe it without the banned words</div>
           </div>
         </button>
-      </div>,
+      </div>
     );
 
   // TEAMS
