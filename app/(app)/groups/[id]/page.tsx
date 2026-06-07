@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/server/current-user";
 import { prisma } from "@/lib/server/db";
 import { computeBalancesFromData } from "@/lib/server/balances";
+import { simplifyDebts } from "@/lib/server/simplify";
 import { GroupDetailClient } from "@/components/groups/group-detail-client";
 
 export default async function GroupPage({ params }: { params: Promise<{ id: string }> }) {
@@ -59,6 +60,30 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
       });
   }
 
+  // Simplified "who owes whom" — minimum transfers involving me only.
+  const rawNet: Record<string, number> = {};
+  for (const b of balances) rawNet[b.userId] = b.net;
+  const simplifiedLines: typeof lines = [];
+  for (const t of simplifyDebts(rawNet)) {
+    if (t.fromUserId === user.id) {
+      simplifiedLines.push({
+        userId: t.toUserId,
+        name: userMap[t.toUserId]?.displayName ?? "?",
+        hue: userMap[t.toUserId]?.avatarColor ?? "0",
+        amount: t.amount,
+        dir: "owe",
+      });
+    } else if (t.toUserId === user.id) {
+      simplifiedLines.push({
+        userId: t.fromUserId,
+        name: userMap[t.fromUserId]?.displayName ?? "?",
+        hue: userMap[t.fromUserId]?.avatarColor ?? "0",
+        amount: t.amount,
+        dir: "owed",
+      });
+    }
+  }
+
   const expenseData = expenses.map((e) => {
     const mine = e.shares.find((s) => s.userId === user.id);
     const myShare = mine ? Number(mine.amountOwed) : 0;
@@ -95,6 +120,12 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
   };
 
   return (
-    <GroupDetailClient group={data} myNet={myNet} lines={lines} expenses={expenseData} />
+    <GroupDetailClient
+      group={data}
+      myNet={myNet}
+      lines={lines}
+      simplifiedLines={simplifiedLines}
+      expenses={expenseData}
+    />
   );
 }

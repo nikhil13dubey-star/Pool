@@ -75,6 +75,7 @@ model User {
   comments         Comment[]
   notifications    Notification[]
   invitesCreatedFor Invite[]
+  addedListItems   ListItem[]
 }
 
 model Group {
@@ -93,6 +94,7 @@ model Group {
   expenses    Expense[]
   settlements Settlement[]
   invites     Invite[]
+  listItems   ListItem[]
 }
 
 model GroupMember {
@@ -212,4 +214,17 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([createdAt])
+}
+
+model ListItem {
+  id        String   @id @default(uuid())
+  groupId   String
+  addedById String
+  text      String
+  createdAt DateTime @default(now())
+
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  addedBy User  @relation(fields: [addedById], references: [id])
+
+  @@index([groupId])
 }

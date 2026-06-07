@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/server/current-user";
 import { Avatar } from "@/components/ui/avatar";
 import { SignOutButton } from "@/components/ui/sign-out-button";
+import { BackButton } from "@/components/shared/back-button";
 
 export default async function ProfilePage() {
   const user = (await getCurrentUser())!;
@@ -10,7 +11,10 @@ export default async function ProfilePage() {
       <div
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
       >
-        <h1 className="lt">Profile</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <BackButton />
+          <h1 className="lt">Profile</h1>
+        </div>
         <Link href="/profile/edit" className="btn-text" style={{ fontSize: 16 }}>
           Edit
         </Link>
