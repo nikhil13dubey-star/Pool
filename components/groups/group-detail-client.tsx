@@ -267,6 +267,13 @@ export function GroupDetailClient({
             >
               Add people
             </Link>
+            <Link
+              href={`/groups/${group.id}/insights`}
+              className="btn btn-ghost"
+              style={{ marginTop: 10 }}
+            >
+              View insights
+            </Link>
           </div>
         </>
       )}

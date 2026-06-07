@@ -26,6 +26,8 @@ enum MemberRole {
 enum SplitMethod {
   EQUAL
   EXACT
+  SHARES
+  PERCENT
 }
 
 enum SettlementMethod {

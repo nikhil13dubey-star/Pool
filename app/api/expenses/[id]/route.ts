@@ -44,9 +44,12 @@ export async function PATCH(
   const description = (b?.description ?? "").trim();
   const amount = Number(b?.amount);
   const paidById = b?.paidById;
-  const splitMethod = b?.splitMethod === "EXACT" ? "EXACT" : "EQUAL";
+  const splitMethod = ["EXACT", "SHARES", "PERCENT"].includes(b?.splitMethod)
+    ? b.splitMethod
+    : "EQUAL";
   const participants: string[] = Array.isArray(b?.participants) ? b.participants : [];
   const exactAmounts = b?.exactAmounts;
+  const weights = b?.weights;
   if (!description || !(amount > 0) || !paidById || participants.length === 0)
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
@@ -63,7 +66,7 @@ export async function PATCH(
 
   let splits;
   try {
-    splits = splitExpense(amount, splitMethod, participants, exactAmounts);
+    splits = splitExpense(amount, splitMethod, participants, exactAmounts, weights);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }

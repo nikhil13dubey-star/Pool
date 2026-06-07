@@ -16,9 +16,12 @@ export async function POST(req: NextRequest) {
   const category = b?.category ?? "Other";
   const notes = (b?.notes ?? "").trim() || null;
   const expenseDate = b?.expenseDate ? new Date(b.expenseDate) : new Date();
-  const splitMethod = b?.splitMethod === "EXACT" ? "EXACT" : "EQUAL";
+  const splitMethod = ["EXACT", "SHARES", "PERCENT"].includes(b?.splitMethod)
+    ? b.splitMethod
+    : "EQUAL";
   const participants: string[] = Array.isArray(b?.participants) ? b.participants : [];
   const exactAmounts: Record<string, number> | undefined = b?.exactAmounts;
+  const weights: Record<string, number> | undefined = b?.weights;
 
   if (!groupId || !description || !(amount > 0) || !paidById || participants.length === 0)
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   let splits;
   try {
-    splits = splitExpense(amount, splitMethod, participants, exactAmounts);
+    splits = splitExpense(amount, splitMethod, participants, exactAmounts, weights);
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }

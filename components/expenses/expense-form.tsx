@@ -20,7 +20,16 @@ interface Initial {
   paidById: string;
   category: string;
   participants: string[];
+  splitMethod?: string; // EQUAL | EXACT | SHARES | PERCENT
   exactAmounts?: Record<string, number>;
+  weights?: Record<string, number>; // share counts or percents (SHARES/PERCENT)
+}
+
+function initialMethod(m?: string): Method {
+  if (m === "EXACT") return "UNEQUAL";
+  if (m === "SHARES") return "SHARES";
+  if (m === "PERCENT") return "PERCENT";
+  return "EQUAL";
 }
 
 export function ExpenseForm({
@@ -37,21 +46,27 @@ export function ExpenseForm({
   const [desc, setDesc] = useState(initial?.description ?? "");
   const [paidBy, setPaidBy] = useState(initial?.paidById ?? "");
   const [category, setCategory] = useState(initial?.category ?? "Food");
-  const [method, setMethod] = useState<Method>(
-    initial?.exactAmounts ? "UNEQUAL" : "EQUAL",
-  );
+  const [method, setMethod] = useState<Method>(initialMethod(initial?.splitMethod));
   const [selected, setSelected] = useState<Set<string>>(
     new Set(initial?.participants ?? []),
   );
   const [exact, setExact] = useState<Record<string, string>>(
-    initial?.exactAmounts
+    initial?.splitMethod === "EXACT" && initial?.exactAmounts
       ? Object.fromEntries(
           Object.entries(initial.exactAmounts).map(([k, v]) => [k, String(v)]),
         )
       : {},
   );
-  const [shares, setShares] = useState<Record<string, number>>({});
-  const [pct, setPct] = useState<Record<string, string>>({});
+  const [shares, setShares] = useState<Record<string, number>>(
+    initial?.splitMethod === "SHARES" && initial?.weights ? initial.weights : {},
+  );
+  const [pct, setPct] = useState<Record<string, string>>(
+    initial?.splitMethod === "PERCENT" && initial?.weights
+      ? Object.fromEntries(
+          Object.entries(initial.weights).map(([k, v]) => [k, String(v)]),
+        )
+      : {},
+  );
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
@@ -147,10 +162,19 @@ export function ExpenseForm({
       expenseDate: new Date().toISOString().slice(0, 10),
       participants,
     };
-    if (method === "EQUAL") payload.splitMethod = "EQUAL";
-    else {
+    if (method === "EQUAL") {
+      payload.splitMethod = "EQUAL";
+    } else if (method === "UNEQUAL") {
       payload.splitMethod = "EXACT";
       payload.exactAmounts = computed;
+    } else if (method === "SHARES") {
+      payload.splitMethod = "SHARES";
+      payload.weights = Object.fromEntries(participants.map((u) => [u, shares[u] ?? 1]));
+    } else {
+      payload.splitMethod = "PERCENT";
+      payload.weights = Object.fromEntries(
+        participants.map((u) => [u, parseFloat(pct[u]) || 0]),
+      );
     }
 
     const url = initial ? `/api/expenses/${initial.id}` : "/api/expenses";

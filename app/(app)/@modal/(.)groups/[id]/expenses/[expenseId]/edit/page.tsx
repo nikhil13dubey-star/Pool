@@ -19,6 +19,7 @@ export default async function EditExpense({
     where: { groupId_userId: { groupId: id, userId: user.id } },
   });
   if (!m?.isActive) notFound();
+  const isWeighted = e.splitMethod === "SHARES" || e.splitMethod === "PERCENT";
   const initial = {
     id: e.id,
     description: e.description,
@@ -26,10 +27,14 @@ export default async function EditExpense({
     paidById: e.paidById,
     category: e.category,
     participants: e.shares.map((s) => s.userId),
+    splitMethod: e.splitMethod,
     exactAmounts:
       e.splitMethod === "EXACT"
         ? Object.fromEntries(e.shares.map((s) => [s.userId, Number(s.amountOwed)]))
         : undefined,
+    weights: isWeighted
+      ? Object.fromEntries(e.shares.map((s) => [s.userId, Number(s.shareValue)]))
+      : undefined,
   };
   return <ExpenseForm groupId={id} initial={initial} />;
 }
