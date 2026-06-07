@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ModalSheet } from "@/components/ui/modal-sheet";
 import { Loader } from "@/components/ui/loader";
@@ -42,6 +43,13 @@ export function GroupSettingsForm({ groupId }: { groupId: string }) {
     router.replace("/");
   }
 
+  async function leave() {
+    if (!confirm("Leave this group?")) return;
+    const res = await fetch(`/api/groups/${groupId}/members`, { method: "DELETE" });
+    if (res.ok) router.replace("/");
+    else alert((await res.json().catch(() => ({})))?.error ?? "Couldn't leave.");
+  }
+
   return (
     <ModalSheet
       title="Group settings"
@@ -64,7 +72,45 @@ export function GroupSettingsForm({ groupId }: { groupId: string }) {
               maxLength={40}
             />
 
-            <div style={{ marginTop: 28 }}>
+            <div className="cap" style={{ margin: "26px 0 10px" }}>
+              Manage
+            </div>
+            <div className="card">
+              <Link
+                href={`/groups/${groupId}/recycle-bin`}
+                className="row"
+                style={{ color: "var(--ink)" }}
+              >
+                <span style={{ flex: 1 }}>Recently deleted</span>
+                <svg
+                  width="8"
+                  height="14"
+                  viewBox="0 0 8 14"
+                  fill="none"
+                  stroke="var(--faint)"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                >
+                  <path d="M1 1l6 6-6 6" />
+                </svg>
+              </Link>
+              <button
+                onClick={leave}
+                className="row"
+                style={{
+                  width: "100%",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  color: "#ff9f6b",
+                }}
+              >
+                <span style={{ flex: 1 }}>Leave group</span>
+              </button>
+            </div>
+
+            <div style={{ marginTop: 24 }}>
               <button
                 onClick={del}
                 className="btn"

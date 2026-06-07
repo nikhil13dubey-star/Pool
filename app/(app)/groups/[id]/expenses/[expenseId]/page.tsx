@@ -23,6 +23,19 @@ export default async function ExpenseDetailPage({
   });
   if (!m?.isActive) notFound();
 
+  const comments = await prisma.comment.findMany({
+    where: { expenseId, isDeleted: false },
+    include: { user: { select: { displayName: true, avatarColor: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  const commentData = comments.map((c) => ({
+    id: c.id,
+    body: c.body,
+    userId: c.userId,
+    name: c.user.displayName,
+    hue: c.user.avatarColor,
+  }));
+
   const data = {
     id: expense.id,
     groupId: expense.groupId,
@@ -40,5 +53,7 @@ export default async function ExpenseDetailPage({
       user: { displayName: s.user.displayName, avatarColor: s.user.avatarColor },
     })),
   };
-  return <ExpenseDetailClient expense={data} currentUserId={user.id} />;
+  return (
+    <ExpenseDetailClient expense={data} currentUserId={user.id} comments={commentData} />
+  );
 }

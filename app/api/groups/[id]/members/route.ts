@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/current-user";
 import { hueFromName } from "@/lib/shared/avatar";
+import { computeBalances } from "@/lib/server/balances";
 
 async function activeMember(groupId: string, userId: string) {
   const m = await prisma.groupMember.findUnique({
@@ -57,6 +58,20 @@ export async function DELETE(
     return NextResponse.json(
       { error: "Only the creator can remove members" },
       { status: 403 },
+    );
+
+  // Block removal/leaving while this member still has an unsettled balance,
+  // otherwise their debt would be orphaned.
+  const balances = await computeBalances(groupId);
+  const net = balances.find((b) => b.userId === targetId)?.net ?? 0;
+  if (Math.abs(net) >= 0.01)
+    return NextResponse.json(
+      {
+        error: isSelf
+          ? "Settle up before you leave the group."
+          : "This person still has a balance — settle up first.",
+      },
+      { status: 400 },
     );
 
   await prisma.groupMember.updateMany({
