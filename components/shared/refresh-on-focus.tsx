@@ -12,7 +12,7 @@ export function RefreshOnFocus() {
     function maybe() {
       if (document.visibilityState !== "visible") return;
       const now = Date.now();
-      if (now - last.current < 10000) return;
+      if (now - last.current < 30000) return;
       last.current = now;
       router.refresh();
     }

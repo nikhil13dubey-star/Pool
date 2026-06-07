@@ -580,6 +580,81 @@ button.row:active {
   }
 }
 
+/* branded "ripple" loader (on-theme for Pool) */
+.loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 60svh;
+}
+.loader {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loader i {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  opacity: 0;
+  animation: ripple 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+.loader i:nth-child(2) {
+  animation-delay: 0.45s;
+}
+.loader i:nth-child(3) {
+  animation-delay: 0.9s;
+}
+.loader b {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--brand-grad);
+  box-shadow: 0 0 16px var(--brand-glow);
+  animation: corePulse 1.8s ease-in-out infinite;
+}
+.loader-label {
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+@keyframes ripple {
+  0% {
+    transform: scale(0.25);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+@keyframes corePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.7);
+    opacity: 0.7;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader i {
+    animation: none;
+    opacity: 0.25;
+  }
+  .loader b {
+    animation: none;
+  }
+}
+
 /* skeleton shimmer for loading states */
 .skel {
   background: linear-gradient(

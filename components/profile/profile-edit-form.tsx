@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ModalSheet } from "@/components/ui/modal-sheet";
+import { Loader } from "@/components/ui/loader";
 
 export function ProfileEditForm() {
   const router = useRouter();
@@ -41,9 +42,7 @@ export function ProfileEditForm() {
     >
       <div style={{ padding: "18px 20px" }}>
         {!loaded ? (
-          <div style={{ color: "var(--muted)", textAlign: "center", padding: 30 }}>
-            Loading…
-          </div>
+          <Loader compact />
         ) : (
           <>
             <div className="cap" style={{ marginBottom: 10 }}>
