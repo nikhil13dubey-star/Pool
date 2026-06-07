@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/server/current-user";
 import { prisma } from "@/lib/server/db";
 import { computeAllGroupBalances } from "@/lib/server/balances";
 import { Avatar } from "@/components/ui/avatar";
+import { ProfileButton } from "@/components/shared/profile-button";
 
 function fmt(n: number) {
   return Math.round(Math.abs(n)).toLocaleString("en-IN");
@@ -50,9 +51,7 @@ export default async function HomePage() {
           height={30}
           style={{ height: 30, width: "auto" }}
         />
-        <Link href="/profile">
-          <Avatar name={user.displayName} hue={user.avatarColor} size={38} ring />
-        </Link>
+        <ProfileButton />
       </div>
 
       <h1 className="lt" style={{ padding: "16px 22px 14px" }}>

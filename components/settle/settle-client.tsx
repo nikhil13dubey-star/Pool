@@ -25,10 +25,12 @@ export function SettleClient({
   net,
   suggestions,
   history,
+  profile,
 }: {
   net: number;
   suggestions: Sug[];
   history: Hist[];
+  profile?: React.ReactNode;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -52,9 +54,17 @@ export function SettleClient({
 
   return (
     <div style={{ minHeight: "100svh", padding: "24px 0 130px" }}>
-      <h1 className="lt" style={{ padding: "0 22px 4px" }}>
-        Settle up
-      </h1>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 22px 4px",
+        }}
+      >
+        <h1 className="lt">Settle up</h1>
+        {profile}
+      </div>
       <div style={{ padding: "0 22px 18px" }}>
         <div className="cap">
           {net >= 0 ? "Across all groups, you're owed" : "Across all groups, you owe"}

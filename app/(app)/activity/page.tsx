@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/server/current-user";
 import { prisma } from "@/lib/server/db";
 import { categoryHue } from "@/lib/shared/categories";
+import { ProfileButton } from "@/components/shared/profile-button";
 
 const inr = (n: number) => Math.round(Math.abs(n)).toLocaleString("en-IN");
 
@@ -69,9 +70,17 @@ export default async function ActivityPage() {
 
   return (
     <div style={{ minHeight: "100svh", padding: "24px 0 130px" }}>
-      <h1 className="lt" style={{ padding: "0 22px 18px" }}>
-        Activity
-      </h1>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 22px 18px",
+        }}
+      >
+        <h1 className="lt">Activity</h1>
+        <ProfileButton />
+      </div>
       {items.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 30px", color: "var(--muted)" }}>
           <div style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)" }}>

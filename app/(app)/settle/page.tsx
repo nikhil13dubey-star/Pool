@@ -3,6 +3,7 @@ import { prisma } from "@/lib/server/db";
 import { computeBalancesFromData } from "@/lib/server/balances";
 import { simplifyDebts } from "@/lib/server/simplify";
 import { SettleClient } from "@/components/settle/settle-client";
+import { ProfileButton } from "@/components/shared/profile-button";
 
 export default async function SettlePage() {
   const user = (await getCurrentUser())!;
@@ -88,5 +89,12 @@ export default async function SettlePage() {
         : `You paid ${s.toUser.displayName}`,
   }));
 
-  return <SettleClient net={net} suggestions={suggestions} history={historyData} />;
+  return (
+    <SettleClient
+      net={net}
+      suggestions={suggestions}
+      history={historyData}
+      profile={<ProfileButton />}
+    />
+  );
 }
