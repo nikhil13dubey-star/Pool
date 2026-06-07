@@ -1,5 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
+
+// Route one-shot pool queries over Neon's HTTP fetch transport instead of
+// opening a WebSocket per invocation. On Vercel's serverless functions this
+// removes the WS handshake from every request — the bulk of our per-page DB
+// latency. Interactive transactions still transparently use WebSockets.
+neonConfig.poolQueryViaFetch = true;
 
 function createPrismaClient() {
   // Local-dev escape hatch: plain Postgres via node-postgres instead of Neon's
