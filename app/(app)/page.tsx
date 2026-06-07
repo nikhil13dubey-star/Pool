@@ -160,20 +160,6 @@ export default async function HomePage() {
           <span style={{ fontSize: 14, fontWeight: 600 }}>New group</span>
         </Link>
       </div>
-
-      <Link href="/groups/new" className="fab" aria-label="New group">
-        <svg
-          width="26"
-          height="26"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="var(--accent-ink)"
-          strokeWidth="2.8"
-          strokeLinecap="round"
-        >
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-      </Link>
     </div>
   );
 }

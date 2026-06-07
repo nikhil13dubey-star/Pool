@@ -51,6 +51,8 @@ body {
   min-height: 100svh;
   background: var(--bg);
   overflow-x: hidden;
+  /* clear the iOS status bar (time/wifi/battery) when installed as a PWA */
+  padding-top: env(safe-area-inset-top);
 }
 
 /* ── primitives ── */
@@ -246,7 +248,7 @@ button.row:active {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: 26px;
+  bottom: calc(22px + env(safe-area-inset-bottom));
   z-index: 50;
   display: flex;
   gap: 4px;
@@ -611,12 +613,11 @@ button.row:active {
 .loader i:nth-child(3) {
   animation-delay: 0.9s;
 }
-.loader b {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--brand-grad);
-  box-shadow: 0 0 16px var(--brand-glow);
+.loader-logo {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px var(--brand-glow));
   animation: corePulse 1.8s ease-in-out infinite;
 }
 .loader-label {
@@ -650,7 +651,7 @@ button.row:active {
     animation: none;
     opacity: 0.25;
   }
-  .loader b {
+  .loader-logo {
     animation: none;
   }
 }
