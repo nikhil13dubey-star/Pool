@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PinPad } from "@/components/ui/pin-pad";
 
 type Step = "name" | "pin" | "confirm";
 
 export default function CreateAccountPage() {
+  return (
+    <Suspense fallback={null}>
+      <CreateAccountInner />
+    </Suspense>
+  );
+}
+
+function CreateAccountInner() {
   const router = useRouter();
   const next = useSearchParams().get("next") || "/";
   const [step, setStep] = useState<Step>("name");
